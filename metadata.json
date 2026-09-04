@@ -1,0 +1,9 @@
+{
+    "id": "SillyBalaro",
+    "name": "Silly Balaro Mod",
+    "author": ["Djoaieuh"],
+    "description": "A silly Balaro Mod",
+    "prefix": "sillyB",
+    "main_file": "main.lua",
+    "version": "1.0.0" 
+}
