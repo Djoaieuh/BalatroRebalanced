@@ -140,40 +140,101 @@ SMODS.Joker:take_ownership('superposition', {
 
 SMODS.Joker:take_ownership('onyx_agate',{
     key = "onyx_agate",
-    unlocked = false,
-    blueprint_compat = true,
+    name = 'onyxAgate',
     loc_txt = {
         name = 'Onyx Agate',
         text = {
             'Retrigger any {C:attention}played{} {C:blue}Clubs{}',
         },
     },
-    rarity = 2,
     cost = 6,
-    pos = { x = 2, y = 8 },
-    config = { extra = 1 },
+    config = { extra = {repetitions = 1 }},
     calculate = function(self, card, context)
         if context.repetition and context.cardarea == G.play and context.other_card:is_suit("Clubs") then
             return {
-                repetitions = card.ability.extra
+                repetitions = card.ability.extra.repetitions
             }
         end
     end,
-    locked_loc_vars = function(self, info_queue, card)
-        return { vars = { 30, localize('Clubs', 'suits_singular') } }
-    end,
-    check_for_unlock = function(self, args) -- equivalent to `unlock_condition = { type = 'modify_deck', extra = { count = 30, suit = 'Clubs' } }`
-        if args.type == 'modify_deck' then
-            local count = 0
-            for _, playing_card in ipairs(G.playing_cards or {}) do
-                if playing_card.base.suit == "Clubs" then count = count + 1 end
-                if count >= 30 then
-                    return true
-                end
-            end
-        end
-        return false
-    end, 
 },true)
 
+SMODS.Joker:take_ownership('marble',{
+    key = "marble",
+    blueprint_compat = false,
+    rarity = 2,
+    cost = 6,
+    override = true,
+    pos = { x = 3, y = 2 },
+    loc_vars = function(self, info_queue, card)
+        info_queue[#info_queue + 1] = G.P_CENTERS.m_stone
+    end,
+
+    loc_txt = {
+        name = 'Marble Joker',
+        text = {
+            'On the first {C:blue}hand{} of each',
+            '{C:attention}round{} turn the 2 lowest {C:attention}ranked{}',
+            'cards into {C:attention}Stone Cards{}'
+        },
+    },
+
+    calculate = function(self, card, context)
+    if context.before and context.full_hand  and G.GAME.current_round.hands_played == 0 then
+        local hand = context.full_hand
+
+        local sorted = {}
+        for _, c in ipairs(hand) do
+            table.insert(sorted, c)
+        end
+
+        table.sort(sorted, function(a, b)
+            return a:get_id() < b:get_id()
+        end)
+
+        for i = 1, math.min(2, #sorted) do
+            sorted[i]:set_ability(G.P_CENTERS.m_stone)
+        end
+
+        return {
+            message = "Stone!"
+        }
+    end
+
+    if context.setting_blind then
+
+    end
+end
+
+} , true)
+
+local old_calculate_reroll_cost = calculate_reroll_cost
+
+function calculate_reroll_cost(skip_increment)
+    old_calculate_reroll_cost(skip_increment)
+
+    if skip_increment then
+        return
+    end
+
+    if G.GAME.current_round.free_rerolls > 0 then
+        return
+    end
+
+    local extra_increase = 0
+
+    if G.GAME.selected_back_key.key == 'b_black'
+    then
+        extra_increase = extra_increase + 1
+    end
+
+    if G.GAME.stake >= 5 then
+        extra_increase = extra_increase + 1
+    end
+
+    G.GAME.current_round.reroll_cost_increase =
+        G.GAME.current_round.reroll_cost_increase + extra_increase
+
+    G.GAME.current_round.reroll_cost =
+        G.GAME.current_round.reroll_cost + extra_increase
+end
 --#endregion

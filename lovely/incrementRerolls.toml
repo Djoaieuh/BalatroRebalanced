@@ -1,0 +1,59 @@
+[manifest]
+version = "1.0.0"
+priority = 0
+
+[[patches]]
+[patches.pattern]
+target = 'common_events.lua'
+pattern = '''
+function calculate_reroll_cost(skip_increment)
+    if G.GAME.current_round.free_rerolls < 0 then G.GAME.current_round.free_rerolls = 0 end
+
+    if G.GAME.current_round.free_rerolls > 0 then G.GAME.current_round.reroll_cost = 0; return end
+
+    G.GAME.current_round.reroll_cost_increase = G.GAME.current_round.reroll_cost_increase or 0
+
+    if not skip_increment then G.GAME.current_round.reroll_cost_increase = G.GAME.current_round.reroll_cost_increase + 1 end
+
+    G.GAME.current_round.reroll_cost = (G.GAME.round_resets.temp_reroll_cost or G.GAME.round_resets.reroll_cost) + G.GAME.current_round.reroll_cost_increase
+
+end
+'''
+position = "at"
+
+payload = '''
+function calculate_reroll_cost(skip_increment)
+
+    if G.GAME.current_round.free_rerolls < 0 then
+        G.GAME.current_round.free_rerolls = 0
+    end
+
+    if G.GAME.current_round.free_rerolls > 0 then
+        G.GAME.current_round.reroll_cost = 0
+        return
+    end
+
+    G.GAME.current_round.reroll_cost_increase = G.GAME.current_round.reroll_cost_increase or 0
+
+    if not skip_increment then
+        local extra_increment = 0
+
+        if G.GAME.selected_back.name == 'b_black' then
+            extra_increment = extra_increment + 1
+        end
+
+        if G.GAME.stake >= 5 then
+            extra_increment = extra_increment + 1
+        end
+
+        G.GAME.current_round.reroll_cost_increase =
+            G.GAME.current_round.reroll_cost_increase + 1 + extra_increment
+    end
+
+    G.GAME.current_round.reroll_cost =
+        (G.GAME.round_resets.temp_reroll_cost or G.GAME.round_resets.reroll_cost)
+        + G.GAME.current_round.reroll_cost_increase
+
+end
+'''
+match_indent = true
