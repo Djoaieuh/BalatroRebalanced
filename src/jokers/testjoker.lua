@@ -1,6 +1,4 @@
 
-print('TESTJOKER FILE REACHED')
-
 SMODS.Joker{
     key = "TestJoker",
     atlas = "placeholders",

@@ -1,9 +1,9 @@
 {
-    "id": "SillyBalaro",
-    "name": "Silly Balaro Mod",
+    "id": "BalatroRebalanced",
+    "name": "Balatro Rebalanced",
     "author": ["Djoaieuh"],
-    "description": "A silly Balaro Mod",
-    "prefix": "sillyB",
+    "description": "An attempt at rebalancing Balatro",
+    "prefix": "balatroRebalanced",
     "main_file": "main.lua",
     "version": "1.0.0" 
 }
