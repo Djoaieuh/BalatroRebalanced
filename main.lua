@@ -207,6 +207,95 @@ end
 
 } , true)
 
+SMODS.Joker:take_ownership('j_loyalty_card', {
+    config = {
+        extra = {
+            hands = 0,
+            required = 6,
+            every = 6,
+            x_mult = 4,
+            ready = false
+        }
+    },
+
+    rarity = 1,
+    cost = 4,
+
+    loc_txt = {
+    name = 'Loyalty Card',
+    text = {
+        'After {C:attention}#1#{} hands played,',
+        'stores {X:mult,C:white}X#2#{} Mult',
+        'When {C:attention}rightmost{}, cashes out',
+        'and destroys itself',
+        '{s:0.8,C:inactive}#3#'
+        }
+    },
+
+    loc_vars = function(self, info_queue, card)
+    local remaining = card.ability.extra.required - card.ability.extra.hands
+    if remaining < 0 then remaining = 0 end
+
+    local status_text
+    if card.ability.extra.ready then
+        status_text = '(Ready !)'
+    else
+        status_text = '(' .. remaining .. ' hands left!)'
+    end
+
+    return {
+        vars = {
+            card.ability.extra.required,
+            card.ability.extra.x_mult,
+            status_text
+            }
+        }
+    end,
+
+    calculate = function(self, card, context)
+
+        -- Count hands played
+        if context.after and not card.ability.extra.ready then
+            card.ability.extra.hands = card.ability.extra.hands + 1
+
+            if card.ability.extra.hands >= card.ability.extra.required then
+                card.ability.extra.ready = true
+                return {
+                    message = 'Ready!',
+                    colour = G.C.GREEN
+                }
+            else
+                return {
+                    message = card.ability.extra.hands .. '/' .. card.ability.extra.required,
+                    colour = G.C.FILTER
+                }
+            end
+        end
+
+        -- Cash out if charged AND rightmost
+        if context.joker_main
+            and card.ability.extra.ready
+            and card == G.jokers.cards[#G.jokers.cards] then
+
+            return {
+                x_mult = card.ability.extra.x_mult,
+                message = 'Cashed Out!',
+                colour = G.C.MULT,
+                func = function()
+                    G.E_MANAGER:add_event(Event({
+                        trigger = 'after',
+                        delay = 0.1,
+                        func = function()
+                            card:start_dissolve()
+                            return true
+                        end
+                    }))
+                end
+            }
+        end
+    end
+}, true)
+
 --#endregion
 
 --#region Reroll Changes
