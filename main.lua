@@ -30,7 +30,7 @@ end
 
 --#endregion
 
---#region Changes 
+--#region Joker Changes
 
 SMODS.Joker:take_ownership('greedy_joker', {config = {extra = {s_mult = 4, suit = 'Diamonds'}}, }, true)
 SMODS.Joker:take_ownership('lusty_joker', {config = {extra = {s_mult = 4, suit = 'Hearts'}}, }, true)
@@ -207,6 +207,10 @@ end
 
 } , true)
 
+--#endregion
+
+--#region Reroll Changes
+
 local old_calculate_reroll_cost = calculate_reroll_cost
 
 function calculate_reroll_cost(skip_increment)
@@ -222,12 +226,11 @@ function calculate_reroll_cost(skip_increment)
 
     local extra_increase = 0
 
-    if G.GAME.selected_back_key.key == 'b_black'
-    then
+    if G.GAME.selected_back_key.key == 'b_black' then
         extra_increase = extra_increase + 1
     end
 
-    if G.GAME.stake >= 5 then
+    if G.GAME.modifiers.extra_reroll_cost then
         extra_increase = extra_increase + 1
     end
 
@@ -237,4 +240,15 @@ function calculate_reroll_cost(skip_increment)
     G.GAME.current_round.reroll_cost =
         G.GAME.current_round.reroll_cost + extra_increase
 end
+
+--#endregion    
+
+--#region Stakes
+
+SMODS.Stake:take_ownership('blue', {
+    modifiers = function()
+        G.GAME.modifiers.extra_reroll_cost = true
+    end,
+}, true)
+
 --#endregion
