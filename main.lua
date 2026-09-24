@@ -28,6 +28,8 @@ for _, file in ipairs(jokers_src) do
     assert(SMODS.load_file("src/jokers/" .. file))()
 end
 
+assert(SMODS.load_file('highlight_changed.lua'))()
+
 --#endregion
 
 --#region Hand Levels
@@ -877,6 +879,7 @@ SMODS.Joker:take_ownership('hanging_chad', {
 }, true)
 
 SMODS.Joker:take_ownership('cloud_9', {
+    blueprint_compat = false,
     config = {
         extra = 1,
         count = 0
@@ -1023,6 +1026,7 @@ SMODS.Joker:take_ownership('throwback',{
 } , true)
 
 SMODS.Joker:take_ownership('glass', {
+    blueprint_compat = false,
     config = {
         no_glass_joker_effect = true
     },
@@ -1033,6 +1037,7 @@ SMODS.Joker:take_ownership('glass', {
 }, true)
 
 SMODS.Joker:take_ownership('merry_andy', {
+    blueprint_compat = false,
     config = {
         extra = {
             d_size = 3,
@@ -1071,6 +1076,7 @@ SMODS.Joker:take_ownership('merry_andy', {
 }, true)
 
 SMODS.Joker:take_ownership('steel_joker', {
+    blueprint_compat = false,
     name = 'steel_joker',
     config = {
         no_steel_joker_effect = true
@@ -1082,6 +1088,7 @@ SMODS.Joker:take_ownership('steel_joker', {
 }, true)
 
 SMODS.Joker:take_ownership('stone', {
+    blueprint_compat = false,
     config = {
         extra = 25
     },
@@ -1094,6 +1101,7 @@ SMODS.Joker:take_ownership('stone', {
 assert(SMODS.load_file("src/jokers/flowerPot.lua"))()
 
 SMODS.Joker:take_ownership('satellite', {
+    blueprint_compat = false,
     config = {
         extra = 2,
         hand = nil
@@ -1189,7 +1197,7 @@ SMODS.Joker:take_ownership('satellite', {
     end
 }, true)
 
-SMODS.Joker:take_ownership('shoot_the_moon', {}, true)
+SMODS.Joker:take_ownership('shoot_the_moon', {blueprint_compat = false,}, true)
 
 local old_evaluate_play = G.FUNCS.evaluate_play
 
@@ -1217,6 +1225,96 @@ G.FUNCS.evaluate_play = function(e)
 
     old_evaluate_play(e)
 end
+
+local function roll_campfire_target()
+    -- Card sets Campfire can ask you to sell; values must match `card.ability.set`.
+    -- Fully random: the same target can come up several times in a row.
+    -- The list lives inside the function so it can never be nil or out of scope.
+    return pseudorandom_element({ 'Joker', 'Tarot', 'Planet' }, pseudoseed('campfire_target'))
+end
+
+SMODS.Joker:take_ownership('campfire', {
+    -- rarity, cost, pos, blueprint_compat, etc. stay as vanilla
+    config = { extra = { xmult_gain = 0.25, xmult = 1 } },
+
+    set_ability = function(self, card, initial, delay_sprites)
+        -- Only roll if there is no target yet, so a reloaded/copied card keeps its target
+        card.ability.extra.target = card.ability.extra.target or roll_campfire_target()
+    end,
+
+    loc_vars = function(self, info_queue, card)
+        -- Fallback covers tooltip/stand-in cards that never went through set_ability
+        local target = card.ability.extra.target or 'Joker'
+        return {
+            vars = {
+                card.ability.extra.xmult_gain,
+                card.ability.extra.xmult,
+                localize('k_' .. string.lower(target)), -- "Joker" / "Tarot" / "Planet"
+                colours = { G.C.SECONDARY_SET[target] },
+            }
+        }
+    end,
+
+    calculate = function(self, card, context)
+        -- Ignore blueprint copies, and ignore Campfire being sold itself
+        if context.selling_card and not context.blueprint and context.card ~= card then
+            local extra = card.ability.extra
+
+            if context.card.ability.set == extra.target then
+                -- Correct sale: scale up, then pick a new target
+                -- See note about SMODS Scaling Manipulation on the wiki
+                extra.xmult = extra.xmult + extra.xmult_gain
+                extra.target = roll_campfire_target()
+                return {
+                    message = localize('k_upgrade_ex')
+                }
+            elseif extra.xmult > 1 then
+                -- Wrong sale: reset (target stays the same)
+                extra.xmult = 1
+                return {
+                    message = localize('k_reset'),
+                    colour = G.C.RED
+                }
+            end
+        end
+
+        if context.joker_main then
+            return {
+                xmult = card.ability.extra.xmult
+            }
+        end
+    end,
+}, true) -- silent: suppresses the take_ownership log message
+
+SMODS.Joker:take_ownership('matador', {
+    blueprint_compat = true,
+    name = 'testmatador',
+    -- rarity, cost, pos, blueprint_compat etc. stay as vanilla
+    config = { extra = { hands = 3 } },
+
+    loc_vars = function(self, info_queue, card)
+        return { vars = { card.ability.extra.hands } }
+    end,
+
+    calculate = function(self, card, context)
+        -- context.blind is the blind prototype; only Boss Blinds (incl. Showdown) have `.boss`
+        if context.setting_blind and context.blind.boss then
+            G.E_MANAGER:add_event(Event({
+                func = function()
+                    -- Temporary: only affects the current blind, not round_resets.hands
+                    ease_hands_played(card.ability.extra.hands)
+                    SMODS.calculate_effect(
+                        { message = localize { type = 'variable', key = 'a_hands', vars = { card.ability.extra.hands } } },
+                        context.blueprint_card or card)
+                    return true
+                end
+            }))
+            return nil, true -- This is for Joker retrigger purposes
+        end
+    end,
+}, true) 
+
+
 --#endregion
 
 --#region Reroll Changes
@@ -1450,4 +1548,8 @@ SMODS.Back:take_ownership('ghost',{
     config = { spectral_rate = 2, consumables = { 'c_ouija' } },
 } , true)
 
+SMODS.Back:take_ownership ('black',{config = { hands = 0, joker_slot = 1 },} , true)
+
 --#endregion
+
+MyMod.apply_changed_badges() --Keep at the end

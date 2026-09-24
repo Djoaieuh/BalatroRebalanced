@@ -229,6 +229,7 @@ SMODS.Joker:take_ownership('flower_pot', {
     name = "Flower Pot Sprout", -- internal only; stops vanilla's name-based Flower Pot code from running
     unlocked = true,
     blueprint_compat = false,
+    rarity = 3,
     -- While you own ANY suited Flower Pot, the base Flower Pot can't spawn again
     -- (SMODS drops it from used_jokers when it transforms, so we block it ourselves).
     -- Showman-style effects lift the block, exactly like they do for normal duplicates.

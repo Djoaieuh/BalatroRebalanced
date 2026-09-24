@@ -1,0 +1,33 @@
+[manifest]
+
+version = "1.0.0"
+
+priority = 0
+
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = """if self.ability.name == 'Loyalty Card' then
+                            self.ability.loyalty_remaining = (self.ability.extra.every-1-(G.GAME.hands_played - self.ability.hands_played_at_create))%(self.ability.extra.every+1)
+                            if context.blueprint then
+                                if self.ability.loyalty_remaining == self.ability.extra.every then
+                                    return {
+                                        message = localize{type='variable',key='a_xmult',vars={self.ability.extra.Xmult}},
+                                        Xmult_mod = self.ability.extra.Xmult
+                                    }
+                                end
+                            else
+                                if self.ability.loyalty_remaining == 0 then
+                                    local eval = function(card) return (card.ability.loyalty_remaining == 0) end
+                                    juice_card_until(self, eval, true)
+                                elseif self.ability.loyalty_remaining == self.ability.extra.every then
+                                    return {
+                                        message = localize{type='variable',key='a_xmult',vars={self.ability.extra.Xmult}},
+                                        Xmult_mod = self.ability.extra.Xmult
+                                    }
+                                end
+                            end
+                        end"""
+position = "at"
+payload = "-- Loyalty Card vanilla effect removed"
+match_indent = true

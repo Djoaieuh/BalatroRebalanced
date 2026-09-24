@@ -133,6 +133,25 @@ return {
                     "cards to the {C:attention}Queen's suit{}"
                 }
             },
+
+            j_campfire = {
+                name = "Campfire",
+                text = {
+                    "Selling a {V:1}#3#{} gives",
+                    "{X:mult,C:white}X#1#{} Mult and changes target",
+                    "Selling anything else",
+                    "resets this Joker to {X:mult,C:white}X1{} Mult",
+                    "{C:inactive}(Currently {X:mult,C:white}X#2#{C:inactive} Mult)",
+                },
+            },
+
+            j_matador = {
+                name = "Matador",
+                text = {
+                    "When {C:attention}Boss Blind{} is selected,",
+                    "gain {C:blue}+#1#{} Hands",
+                },
+            },
         },
 
         Stake = {
