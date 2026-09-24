@@ -140,12 +140,24 @@ SMODS.Consumable:take_ownership('ouija', {
 }, true)
 
 SMODS.current_mod.calculate = function(self, context)
+
+    if context.starting_shop then
+        G.GAME.planet_tycoon_active = true
+        G.GAME.planet_tycoon_discount = 0
+        calculate_reroll_cost(true)
+    end
+
+    if context.setting_blind then
+        G.GAME.planet_tycoon_active = false
+        G.GAME.planet_tycoon_discount = 0
+    end
+
     if context.debuff_card and context.debuff_card.ability.ouija_debuff then
         return { debuff = true }
     end
 
     if context.ante_change and context.ante_end then
-        for _, playing_card in ipairs(G.playing_cards or {}) do
+        for _, playing_card in ipairs(G.playing_cards or {})do
             if playing_card.ability.ouija_debuff then
                 playing_card.ability.ouija_debuff = nil
                 SMODS.calculate_context({ debuff_card = playing_card })
@@ -1072,13 +1084,18 @@ SMODS.Joker:take_ownership('steel_joker', {
 SMODS.Joker:take_ownership('stone', {
     config = {
         extra = 25
-    }
+    },
+
+    calculate = function(self, card, context)
+        return nil
+    end
 }, true)
 
 assert(SMODS.load_file("src/jokers/flowerPot.lua"))()
 
 SMODS.Joker:take_ownership('satellite', {
     config = {
+        extra = 2,
         hand = nil
     },
 
@@ -1100,10 +1117,31 @@ SMODS.Joker:take_ownership('satellite', {
     end,
 
     loc_vars = function(self, info_queue, card)
+        local display_hand = card.ability.hand
+
+        -- Collection / outside a run:
+        -- choose a random visible hand to display if none has been assigned yet
+        if not display_hand and G.GAME and G.GAME.hands then
+            local hands = {}
+
+            for hand, data in pairs(G.GAME.hands) do
+                if data.visible ~= false then
+                    hands[#hands + 1] = hand
+                end
+            end
+
+            if #hands > 0 then
+                display_hand = pseudorandom_element(
+                    hands,
+                    pseudoseed('satellite_collection')
+                )
+            end
+        end
+
         return {
             vars = {
-                card.ability.hand
-                    and localize(card.ability.hand, 'poker_hands')
+                display_hand
+                    and localize(display_hand, 'poker_hands')
                     or "???"
             }
         }
@@ -1124,7 +1162,6 @@ SMODS.Joker:take_ownership('satellite', {
     end,
 
     calculate = function(self, card, context)
-
         if context.after
             and context.scoring_name == card.ability.hand
         then
@@ -1152,59 +1189,34 @@ SMODS.Joker:take_ownership('satellite', {
     end
 }, true)
 
-SMODS.Joker:take_ownership('shoot_the_moon', {
+SMODS.Joker:take_ownership('shoot_the_moon', {}, true)
 
-    name = 'stm',
+local old_evaluate_play = G.FUNCS.evaluate_play
 
-    calculate = function(self, card, context)
+G.FUNCS.evaluate_play = function(e)
+    local shoot_the_moon = false
 
-        -- Convert suits exactly once, when Play Hand is pressed.
-        if context.press_play then
-            -- Build the highlighted cards in left-to-right hand order,
-            -- not selection-click order.
-            local ordered_highlighted = {}
-            for _, c in ipairs(G.hand.cards) do
-                if c.highlighted then
-                    ordered_highlighted[#ordered_highlighted + 1] = c
-                end
-            end
-
-            if #ordered_highlighted > 0 then
-                local first_card = ordered_highlighted[1]
-                if first_card:get_id() == 12 then
-                    local suit = first_card.base.suit
-                    for i = 2, #ordered_highlighted do
-                        if ordered_highlighted[i].base.suit ~= suit then
-                            ordered_highlighted[i]:change_suit(suit)
-                        end
-                    end
-                end
+    if G.jokers and G.jokers.cards then
+        for _, joker in ipairs(G.jokers.cards) do
+            if joker.ability and joker.ability.name == 'Shoot the Moon' then
+                shoot_the_moon = true
+                break
             end
         end
-
-        -- Safety net: also confirm the Flush label using hand-position order.
-        if context.evaluate_poker_hand
-            and context.full_hand
-            and #context.full_hand >= 5
-        then
-            local ordered = {}
-            for _, c in ipairs(G.hand.cards) do
-                if c.highlighted then
-                    ordered[#ordered + 1] = c
-                end
-            end
-            local first_card = ordered[1]
-            if first_card and first_card:get_id() == 12 then
-                return {
-                    replace_scoring_name = "Flush"
-                }
-            end
-        end
-
     end
 
-}, true)
+    if shoot_the_moon and G.play and G.play.cards and #G.play.cards > 0 then
+        local queen = G.play.cards[1]
 
+        if queen:get_id() == 12 then
+            for i = 2, #G.play.cards do
+                G.play.cards[i]:change_suit(queen.base.suit)
+            end
+        end
+    end
+
+    old_evaluate_play(e)
+end
 --#endregion
 
 --#region Reroll Changes
@@ -1214,29 +1226,38 @@ local old_calculate_reroll_cost = calculate_reroll_cost
 function calculate_reroll_cost(skip_increment)
     old_calculate_reroll_cost(skip_increment)
 
-    if skip_increment then
-        return
-    end
-
     if G.GAME.current_round.free_rerolls > 0 then
         return
     end
 
-    local extra_increase = 0
+    if not skip_increment then
+        local extra_increase = 0
 
-    if G.GAME.selected_back_key.key == 'b_black' then
-        extra_increase = extra_increase + 1
+        if G.GAME.selected_back_key.key == 'b_black' then
+            extra_increase = extra_increase + 1
+        end
+
+        if G.GAME.modifiers.extra_reroll_cost then
+            extra_increase = extra_increase + 1
+        end
+
+        G.GAME.current_round.reroll_cost_increase =
+            G.GAME.current_round.reroll_cost_increase + extra_increase
+
+        G.GAME.current_round.reroll_cost =
+            G.GAME.current_round.reroll_cost + extra_increase
     end
 
-    if G.GAME.modifiers.extra_reroll_cost then
-        extra_increase = extra_increase + 1
+    if G.GAME.planet_tycoon_active then
+        local discount = G.GAME.planet_tycoon_discount or 0
+
+        if discount > 0 then
+            G.GAME.current_round.reroll_cost = math.max(
+                0,
+                G.GAME.current_round.reroll_cost - discount
+            )
+        end
     end
-
-    G.GAME.current_round.reroll_cost_increase =
-        G.GAME.current_round.reroll_cost_increase + extra_increase
-
-    G.GAME.current_round.reroll_cost =
-        G.GAME.current_round.reroll_cost + extra_increase
 end
 
 --#endregion    

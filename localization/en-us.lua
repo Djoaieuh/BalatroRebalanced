@@ -205,9 +205,18 @@ return {
                 text = {
                     '{C:planet}Planet{} cards now upgrade',
                     'your {C:attention}poker hands{} by',
-                    'an{C:attention}extra level{}'
+                    'an {C:attention}extra level{}'
                 }
-            }
+            },
+
+            v_planet_tycoon = {
+                name = "Planet Tycoon",
+                text = {
+                    "Whenever you use a {C:planet}Planet{} card",
+                    "in the {C:attention}Shop{},",
+                    "reduce the reroll cost by {C:money}$2{}"
+                },
+            },
 
         },
 

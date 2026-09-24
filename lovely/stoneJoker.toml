@@ -1,35 +1,36 @@
 [manifest]
-
 version = "1.0.0"
-
 priority = 0
 
 [[patches]]
-
 [patches.pattern]
-
-target = "card.lua"
-
-pattern = "if self.ability.effect == 'Stone Card' and not self.vampired then"
-
+target = "functions/misc_functions.lua"
+pattern = "for i = 1, SMODS.Rank.max_id.value do"
 position = "at"
+payload = "for i = 1, SMODS.Rank.max_id.value + 1 do"
+match_indent = true
+times = 1
 
-payload = "if self.ability.effect == 'Stone Card' and not self.vampired and not (G.jokers and next(SMODS.find_card('j_stone'))) then"
-
+[[patches]]
+[patches.pattern]
+target = "functions/misc_functions.lua"
+pattern = "if hand[i]:get_id() == hand[j]:get_id() and i ~= j then"
+position = "at"
+payload = "if ((G.jokers and next(SMODS.find_card('j_stone')) and hand[i].config.center == G.P_CENTERS.m_stone and hand[j].config.center == G.P_CENTERS.m_stone) or hand[i]:get_id() == hand[j]:get_id()) and i ~= j then"
 match_indent = true
 
 [[patches]]
-
 [patches.pattern]
-
-target = "card.lua"
-
-pattern = "if SMODS.has_no_suit(self) then"
-
+target = "functions/misc_functions.lua"
+pattern = "vals[curr[1]:get_id()] = curr"
 position = "at"
-
-payload = "if SMODS.has_no_suit(self) and not (self.config.center == G.P_CENTERS.m_stone and G.jokers and next(SMODS.find_card('j_stone'))) then"
-
+payload = "local curr_id = curr[1]:get_id(); if G.jokers and next(SMODS.find_card('j_stone')) and curr[1].config.center == G.P_CENTERS.m_stone then curr_id = SMODS.Rank.max_id.value + 1 end; vals[curr_id] = curr"
 match_indent = true
 
-times = 2
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = "if self.ability.name == 'Stone Joker' and self.ability.stone_tally > 0 then"
+position = "at"
+payload = "if false then"
+match_indent = true

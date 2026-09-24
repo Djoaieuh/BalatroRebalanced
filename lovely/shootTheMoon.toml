@@ -1,0 +1,41 @@
+[manifest]
+
+version = "1.0.0"
+
+priority = 0
+
+[[patches]]
+
+[patches.pattern]
+
+target = "card.lua"
+
+pattern = '''elseif self.ability.name == 'Shoot the Moon' then loc_vars = {self.ability.extra}'''
+
+position = "at"
+
+payload = ""
+
+match_indent = true
+
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = """if self.ability.name == 'Shoot the Moon' and
+                        context.other_card:get_id() == 12 then
+                        if context.other_card.debuff then
+                            return {
+                                message = localize('k_debuffed'),
+                                colour = G.C.RED,
+                                card = self,
+                            }
+                        else
+                            return {
+                                h_mult = 13,
+                                card = self
+                            }
+                        end
+                    end"""
+position = "at"
+payload = "-- Shoot the Moon vanilla effect removed"
+match_indent = true
