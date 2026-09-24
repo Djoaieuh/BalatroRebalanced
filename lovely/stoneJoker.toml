@@ -1,0 +1,35 @@
+[manifest]
+
+version = "1.0.0"
+
+priority = 0
+
+[[patches]]
+
+[patches.pattern]
+
+target = "card.lua"
+
+pattern = "if self.ability.effect == 'Stone Card' and not self.vampired then"
+
+position = "at"
+
+payload = "if self.ability.effect == 'Stone Card' and not self.vampired and not (G.jokers and next(SMODS.find_card('j_stone'))) then"
+
+match_indent = true
+
+[[patches]]
+
+[patches.pattern]
+
+target = "card.lua"
+
+pattern = "if SMODS.has_no_suit(self) then"
+
+position = "at"
+
+payload = "if SMODS.has_no_suit(self) and not (self.config.center == G.P_CENTERS.m_stone and G.jokers and next(SMODS.find_card('j_stone'))) then"
+
+match_indent = true
+
+times = 2

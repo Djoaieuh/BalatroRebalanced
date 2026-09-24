@@ -1,0 +1,78 @@
+[manifest]
+version = "1.0.0"
+priority = 0
+
+[[patches]]
+
+[patches.pattern]
+
+target = "functions/state_events.lua"
+
+pattern = "G.GAME.current_round.discards_used = G.GAME.current_round.discards_used + 1"
+
+position = "after"
+
+payload = '''
+if G.jokers and next(SMODS.find_card('j_steel_joker')) then
+    G.GAME.steel_joker_draw = true
+end
+'''
+
+match_indent = true
+
+
+[[patches]]
+
+[patches.pattern]
+
+target = "functions/state_events.lua"
+
+pattern = "delay(0.3)"
+
+position = "before"
+
+payload = '''
+if G.GAME.steel_joker_draw and hand_space > 0 then
+    local has_steel = false
+
+    for _, card in ipairs(cards_to_draw) do
+        if SMODS.has_enhancement(card, 'm_steel') then
+            has_steel = true
+            break
+        end
+    end
+
+    if not has_steel then
+        local steel_card = nil
+
+        for i = #G.deck.cards, 1, -1 do
+            if SMODS.has_enhancement(G.deck.cards[i], 'm_steel') then
+                steel_card = G.deck.cards[i]
+                break
+            end
+        end
+
+        if steel_card then
+            cards_to_draw[hand_space] = steel_card
+        end
+    end
+
+    G.GAME.steel_joker_draw = nil
+end
+'''
+
+match_indent = true
+
+[[patches]]
+
+[patches.pattern]
+
+target = "card.lua"
+
+pattern = "if self.ability.name == 'Steel Joker' and self.ability.steel_tally > 0 then"
+
+position = "at"
+
+payload = "if self.ability.name == 'Steel Joker' and self.ability.steel_tally > 0 and not self.ability.no_steel_joker_effect then"
+
+match_indent = true

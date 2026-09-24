@@ -1,0 +1,22 @@
+[manifest]
+version = "1.0.0"
+priority = 0
+
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = '''if self.ability.consumeable.hand_type then
+            level_up_hand(used_tarot, self.ability.consumeable.hand_type)
+        end'''
+position = "at"
+payload = '''if self.ability.consumeable.hand_type then
+            level_up_hand(used_tarot, self.ability.consumeable.hand_type)
+
+            if self.ability.set == 'Planet'
+                and G.GAME.used_vouchers
+                and G.GAME.used_vouchers.v_planet_merchant
+            then
+                level_up_hand(used_tarot, self.ability.consumeable.hand_type)
+            end
+        end'''
+match_indent = true

@@ -1,0 +1,19 @@
+[manifest]
+version = "1.0.0"
+priority = 0
+
+[[patches]]
+
+[patches.pattern]
+
+target = "card.lua"
+
+pattern = "if self.ability.name == 'Glass Joker' and not context.blueprint then"
+
+position = "at"
+
+payload = "if self.ability.name == 'Glass Joker' and not self.ability.no_glass_joker_effect and not context.blueprint then"
+
+match_indent = true
+
+times = 3

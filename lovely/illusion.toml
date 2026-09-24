@@ -1,0 +1,24 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+# Illusion's vanilla effect now lives on Magic Trick, so the hard-coded
+# `used_vouchers.v_illusion` checks are turned off. Otherwise redeeming
+# Illusion would still roll enhanced types and editions on shop cards.
+
+# Vanilla shop code (create_card_for_shop): enhanced type roll + edition roll
+[[patches]]
+[patches.regex]
+target = 'functions/UI_definitions.lua'
+pattern = '''G\.GAME\.used_vouchers(?:\.v_illusion|\[.v_illusion.\])'''
+position = 'at'
+payload = 'false'
+
+# Steamodded's object_weights shop code (same two checks)
+[[patches]]
+[patches.regex]
+target = '=[SMODS _ "src/utils/weights.lua"]'
+pattern = '''G\.GAME\.used_vouchers\[.v_illusion.\]'''
+position = 'at'
+payload = 'false'

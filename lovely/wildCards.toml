@@ -1,0 +1,19 @@
+[manifest]
+version = "1.0.0"
+priority = 0
+
+# Don't debuff wild cards
+[[patches]]
+[patches.pattern]
+target = "blind.lua"
+pattern = '''
+if self.debuff.suit and card:is_suit(self.debuff.suit, true) then
+'''
+position = 'before'
+payload = '''
+    if card.ability.name == 'Wild Card' then
+        card:set_debuff(false)
+        return
+    end
+'''
+match_indent = true
