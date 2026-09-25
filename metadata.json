@@ -5,5 +5,5 @@
     "description": "An attempt at rebalancing Balatro",
     "prefix": "reba",
     "main_file": "main.lua",
-    "version": "1.0.0" 
+    "version": "0.1.0~alpha"
 }

@@ -30,7 +30,7 @@ If you are looking to see the differences between this mod and Vanilla Balatro c
 
 ## Compatibility
 
-This is my first mod, so other mods (especially ones that modify gameplay or display) are likely to conflict with this one and may crash your game. If you run into a compatibility issue, please report it and I'll work on fixing it.
+This is my first mod, and it is still an alpha, so other mods (especially ones that modify gameplay or display) are likely to conflict with this one and may crash your game. If you run into a compatibility issue, please [open an issue](https://github.com/Djoaieuh/BalatroRebalanced/issues) and I'll work on fixing it.
 
 ## Credits
 
