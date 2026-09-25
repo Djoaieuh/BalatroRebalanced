@@ -15,7 +15,7 @@ If you've ever picked up a Joker and thought "why would anyone ever use this," t
 
 ## Installation
 
-1. Download the mod's [latest release](https://github.com/Djoaieuh/BalatroRebalanced).
+1. Download the mod's [latest release](https://github.com/Djoaieuh/BalatroRebalanced/releases/latest).
 2. Type `%appdata%` into your Windows search bar and open the `Balatro` folder inside.
 3. If you don't already have a `Mods` folder there, create one.
 4. Place the mod's folder inside `Mods`.
