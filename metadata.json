@@ -3,7 +3,7 @@
     "name": "Balatro Rebalanced",
     "author": ["Djoaieuh"],
     "description": "An attempt at rebalancing Balatro",
-    "prefix": "balatroRebalanced",
+    "prefix": "reba",
     "main_file": "main.lua",
     "version": "1.0.0" 
 }

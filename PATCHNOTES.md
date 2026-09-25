@@ -132,6 +132,9 @@ Flower Pot :
 - Old : "X3 Mult if poker hand contains a Diamond card, Club card, Heart card, and Spade card"
 - New : "After playing 25 cards of the same suit in a row, transforms into that suit's Flower Pot"
 
+- Old : Rarity : Uncommon
+- New : Rarity : Rare
+
 Hearts Flower Pot (NEW) : 
 - "+4 handsize"
 

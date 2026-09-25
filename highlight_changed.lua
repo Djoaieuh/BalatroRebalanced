@@ -75,6 +75,19 @@ MyMod.change_type = {
     j_shoot_the_moon = 'reworked',
     j_campfire = 'reworked',
     j_matador = 'reworked',
+
+    c_pluto = 'nerfed',
+    c_mercury = 'nerfed',
+    c_uranus = 'buffed',
+    c_venus = 'buffed',
+    c_saturn = 'buffed',
+    c_jupiter = 'buffed',
+    c_earth = 'buffed',
+    c_mars = 'buffed',
+    c_neptune = 'buffed',
+    c_planet_x = 'buffed',
+    c_ceres = 'buffed',
+    c_eris = 'buffed',
 }
 
 MyMod.BADGES = {
