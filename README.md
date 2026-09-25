@@ -35,3 +35,9 @@ This is my first mod, so other mods (especially ones that modify gameplay or dis
 ## Credits
 
 Big thanks to the creators of the [**Vanilla Remade**](https://github.com/nh6574/VanillaRemade/tree/main) project, which served as a great reference for many of the changes in this mod.
+
+## License
+
+[#license](#license)
+
+This project is licensed under the [GPL-3.0 License](LICENSE).
