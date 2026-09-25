@@ -576,7 +576,7 @@ end,
             func = function()
                 play_sound('tarot1')
                 card:juice_up(0.3, 0.5)
-                G.hand:change_size(1)
+                G.hand:change_size(2)
                 return true
             end
         }))
@@ -1103,7 +1103,7 @@ assert(SMODS.load_file("src/jokers/flowerPot.lua"))()
 SMODS.Joker:take_ownership('satellite', {
     blueprint_compat = false,
     config = {
-        extra = 2,
+        extra = 1,
         hand = nil
     },
 

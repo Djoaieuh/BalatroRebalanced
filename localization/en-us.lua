@@ -109,7 +109,7 @@ return {
             j_flower_pot_diamonds = {
                 name = "Diamonds Flower Pot",
                 text = {
-                    "Playing card {C:attention}Enhancements{},",
+                    "Your {C:attention}Enhancements{},",
                     "{C:attention}Seals{} and {C:attention}Editions{}",
                     "trigger an {C:attention}extra{} time",
                 },
@@ -137,8 +137,8 @@ return {
             j_campfire = {
                 name = "Campfire",
                 text = {
-                    "Selling a {V:1}#3#{} gives",
-                    "{X:mult,C:white}X#1#{} Mult and changes target",
+                    "After you sell a {V:1}#3#{} gain",
+                    "{X:mult,C:white}X#1#{} Mult and change target",
                     "Selling anything else",
                     "resets this Joker to {X:mult,C:white}X1{} Mult",
                     "{C:inactive}(Currently {X:mult,C:white}X#2#{C:inactive} Mult)",
@@ -233,7 +233,7 @@ return {
                 text = {
                     "Whenever you use a {C:planet}Planet{} card",
                     "in the {C:attention}Shop{},",
-                    "reduce the reroll cost by {C:money}$2{}"
+                    "reduce the reroll cost by {C:money}$1{}"
                 },
             },
 
@@ -281,7 +281,7 @@ return {
                 text = {
                     'Add a random {C:attention}Enhanced Ace{}',
                     'to your hand and create {C:attention}2{} random',
-                    '{C:dark_edition}Negative{} {C:tarot{} cards'
+                    '{C:dark_edition}Negative{} {C:tarot}Tarot{} cards'
                 }
             },
 
@@ -297,7 +297,7 @@ return {
             c_black_hole = {
                 name = "Black Hole",
                 text = {
-                    "{C:attention}+1{} hand size",
+                    "{C:attention}+2{} hand size",
                     "you can no longer play",
                     "{C:attention}#1#{}"
                 }

@@ -31,7 +31,7 @@ payload = '''if self.ability.consumeable.hand_type then
                 and G.GAME.planet_tycoon_active
             then
                 G.GAME.planet_tycoon_discount =
-                    (G.GAME.planet_tycoon_discount or 0) + 2
+                    (G.GAME.planet_tycoon_discount or 0) + 1
 
                 calculate_reroll_cost(true)
             end
