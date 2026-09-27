@@ -71,10 +71,11 @@ MyMod.change_type = {
     j_steel_joker = 'reworked',
     j_stone = 'reworked',
     j_flower_pot = 'reworked',
-    j_satelite = 'reworked',
+    j_satellite = 'reworked',
     j_shoot_the_moon = 'reworked',
     j_campfire = 'reworked',
     j_matador = 'reworked',
+    j_card_sharp = 'nerfed',
 
     c_pluto = 'nerfed',
     c_mercury = 'nerfed',

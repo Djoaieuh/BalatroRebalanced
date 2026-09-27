@@ -12,6 +12,10 @@ SMODS.Atlas{
 
 --#region JokerDisplay
 
+if JokerDisplay then
+    SMODS.load_file("joker_display_overrides.lua")()
+end
+
 --#endregion
 
 
@@ -655,11 +659,31 @@ SMODS.Joker:take_ownership('vampire', {config = {extra = 0.2, Xmult = 1}}, true)
 
 SMODS.Joker:take_ownership('mail', {config = {extra = 4}}, true)
 
-SMODS.Joker:take_ownership('fortune_teller', {config = {extra = 3}}, true)
+SMODS.Joker:take_ownership('fortune_teller', {
+    config = { extra = { mult = 2 } },
+    loc_vars = function(self, info_queue, card)
+        return { vars = { card.ability.extra.mult, card.ability.extra.mult * (G.GAME.consumeable_usage_total and G.GAME.consumeable_usage_total.tarot or 0) } }
+    end,
+    calculate = function(self, card, context)
+        if context.using_consumeable and not context.blueprint and context.consumeable.ability.set == "Tarot" then
+            return {
+                message = localize { type = 'variable', key = 'a_mult', vars = { G.GAME.consumeable_usage_total.tarot * card.ability.extra.mult } },
+            }
+        end
+        if context.joker_main then
+            return {
+                mult = card.ability.extra.mult *
+                    (G.GAME.consumeable_usage_total and G.GAME.consumeable_usage_total.tarot or 0)
+            }
+        end
+    end,
+}, true)
 
 SMODS.Joker:take_ownership('order', {config = {Xmult = 4, type = 'Straight'}, }, true)
 
 SMODS.Joker:take_ownership('vagabond',{config = {extra = 6}} , true)
+
+SMODS.Joker:take_ownership('card_sharp',{config = {extra = {Xmult = 2}}} , true)
 
 SMODS.Joker:take_ownership('superposition', {
     blueprint_compat = false,
@@ -768,8 +792,8 @@ SMODS.Joker:take_ownership('j_loyalty_card', {
     config = {
         extra = {
             hands = 0,
-            required = 6,
-            every = 6,
+            required = 4,
+            every = 4,
             x_mult = 4,
             ready = false
         }
@@ -1163,7 +1187,7 @@ SMODS.Joker:take_ownership('satellite', {
         local hand = G.GAME.hands[card.ability.hand]
 
         if hand and hand.level > 0 then
-            return 2 * hand.level
+            return 1 * hand.level
         end
 
         return nil
@@ -1545,7 +1569,7 @@ SMODS.Enhancement:take_ownership('glass', {
 --#region Decks
 
 SMODS.Back:take_ownership('ghost',{
-    config = { spectral_rate = 2, consumables = { 'c_ouija' } },
+    config = { spectral_rate = 2, consumables = { 'c_hex' } },
 } , true)
 
 SMODS.Back:take_ownership ('black',{config = { hands = 0, joker_slot = 1 },} , true)

@@ -118,7 +118,7 @@ return {
             j_satellite = {
                 name = "Satellite",
                 text = {
-                    "At end of round, gain {C:money}$2{}",
+                    "At end of round, gain {C:money}$1{}",
                     "for each {C:attention}#1#{} level you have",
                     "After you play a {C:attention}#1#{},",
                     "this changes hand"

@@ -70,7 +70,7 @@ Mail-In Rebate :
 
 Fortune Teller : 
 - Old : "+1 Mult per Tarot card used this run"
-- New : "**+3** Mult per Tarot card used this run"
+- New : "**+2** Mult per Tarot card used this run"
 
 The Order : 
 - Old : "X3 Mult if played hand contains a Straight"
@@ -94,7 +94,7 @@ Marble :
 
 Loyalty Card : 
 - Old : "X4 Mult every 6 hands played"
-- New : "After 6 hands played, stores X4 Mult. When rightmost, cashes out and destroys itself"
+- New : "After 4 hands played, stores X4 Mult. When rightmost, cashes out and destroys itself"
 
 Hanging Chad : 
 - Old : "Retrigger first played card used in scoring 2 additional times"
@@ -147,7 +147,7 @@ Spades Flower Pot (NEW) :
 Diamonds Flower Pot (NEW) : 
 - "Your Enhancements, Seals and Editions trigger an extra time"
 
-Satellite : 
+Satelite : 
 - Old : "Earn $1 at end of round per unique Planet card used this run"
 - New : "At end of round, gain $1 for each Pair level you have. After you play a Pair, this changes hand" 
 *(This is not always on Pairs, the hand is chosen randomly every time)*
@@ -164,6 +164,10 @@ Campfire :
 Matador : 
 - Old : "Earn $8 if played hand triggers the Boss Blind ability"
 - New : "When Boss Blind is selected, gain +3 Hands"
+
+Card Sharp : 
+- Old : "X3 Mult if played poker hand has already been played this round"
+- New : "**X2** Mult if played poker hand has already been played this round"
 
 ## Vouchers
 
@@ -238,10 +242,6 @@ Hex :
 - New : "Add Polychrome to your right-most Joker and make it Eternal"
 
 ## Decks
-
-Ghost Deck :
-- Old : "Spectral cards may appear in the shop, start with a Hex card"
-- New : "Spectral cards may appear in the shop, start with a Ouija card"
 
 Black Deck : 
 - Old : "+1 Joker slot -1 hand every round"
