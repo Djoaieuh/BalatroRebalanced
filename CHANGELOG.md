@@ -19,6 +19,7 @@
 - Ghost Deck starts with a Hex card again instead of a Ouija card
 - Loyalty card now activates after 4 hands instead of 6
 - Loyalty card now has a shaking animation when ready 
+- Flower Pot variants now appear in the collection after obtaining them in a run
 
 ## [0.1.0] 
 ### Added

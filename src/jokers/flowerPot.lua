@@ -6,6 +6,7 @@
 --   * Vanilla Flower Pot counts consecutive same-suit cards (25 needed).
 --   * When the streak is reached it transforms into that suit's hidden Flower Pot.
 --   * The four suit pots never appear in shops/packs (in_pool = false).
+--   * The suit pots are hidden from the Jokers collection until you obtain them.
 --
 --   Hearts   : +3 hand size
 --   Clubs    : Blueprint effect
@@ -13,7 +14,7 @@
 --   Diamonds : enhancements, seals and editions on playing cards trigger an extra time
 
 local SUITS = { 'Hearts', 'Diamonds', 'Spades', 'Clubs' }
-local HIDE_POTS_FROM_COLLECTION = false -- set to false while testing if you spawn cards from the collection
+local HIDE_UNTIL_DISCOVERED = true -- set to false while testing if you spawn cards from the collection
 -- The suit pots are registered WITHOUT your mod prefix (see hidden_pot), so their
 -- final keys are simply j_flower_pot_hearts / _diamonds / _spades / _clubs.
 local POT_KEY = 'j_flower_pot_diamonds'
@@ -36,7 +37,8 @@ local function hidden_pot(suit, def)
     def.key = "flower_pot_" .. suit:lower()
     def.prefix_config = { key = { mod = false } } -- key becomes j_flower_pot_<suit>, no mod prefix
     def.no_mod_badges = true -- hides the mod badge on the card, like take_ownership's silent flag
-    def.no_collection = HIDE_POTS_FROM_COLLECTION -- true = not listed in the Jokers collection
+    -- no_collection is NOT set here: it is refreshed dynamically by the
+    -- SMODS.collection_pool hook below, based on whether the pot is discovered.
     def.rarity = 2
     def.cost = 6
     def.atlas = POT_ATLAS[suit] -- each suit pot uses its own art
@@ -233,7 +235,29 @@ else
 end
 
 ----------------------------------------------------------------------
--- 6) The BASE Flower Pot (vanilla j_flower_pot, reworked)
+-- 6) Collection visibility: suit pots stay hidden until discovered.
+--    SMODS checks no_collection every time the collection is built, so we
+--    refresh the flag each time the pool is requested. `discovered` is
+--    saved in the profile by vanilla, so this persists between runs.
+--    Guarded so the hook is only installed once.
+----------------------------------------------------------------------
+if not SMODS.flower_pot_collection_hook_installed then
+    SMODS.flower_pot_collection_hook_installed = true
+
+    local collection_pool_ref = SMODS.collection_pool
+    function SMODS.collection_pool(base_pool)
+        for _, suit in ipairs(SUITS) do
+            local center = G.P_CENTERS['j_flower_pot_' .. suit:lower()]
+            if center then
+                center.no_collection = (HIDE_UNTIL_DISCOVERED and not center.discovered) or nil
+            end
+        end
+        return collection_pool_ref(base_pool)
+    end
+end
+
+----------------------------------------------------------------------
+-- 7) The BASE Flower Pot (vanilla j_flower_pot, reworked)
 --    Counts consecutive same-suit scoring cards and transforms into
 --    that suit's pot. Defined last because it references the keys above.
 ----------------------------------------------------------------------
@@ -301,6 +325,7 @@ SMODS.Joker:take_ownership('flower_pot', {
                         play_sound('tarot1')
                         card:juice_up(0.8, 0.8)
                         card:set_ability(key) -- SMODS handles add/remove_from_deck and keeps stickers
+                        discover_card(G.P_CENTERS[key]) -- reveals it in the collection and saves to profile
                         return true
                     end
                 }))
