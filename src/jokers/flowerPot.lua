@@ -13,10 +13,21 @@
 --   Diamonds : enhancements, seals and editions on playing cards trigger an extra time
 
 local SUITS = { 'Hearts', 'Diamonds', 'Spades', 'Clubs' }
-local HIDE_POTS_FROM_COLLECTION = true -- set to false while testing if you spawn cards from the collection
+local HIDE_POTS_FROM_COLLECTION = false -- set to false while testing if you spawn cards from the collection
 -- The suit pots are registered WITHOUT your mod prefix (see hidden_pot), so their
 -- final keys are simply j_flower_pot_hearts / _diamonds / _spades / _clubs.
 local POT_KEY = 'j_flower_pot_diamonds'
+
+-- One atlas per suit pot. Files live in assets/1x and assets/2x with identical names:
+--   Flower_Pot_Hearts.png, Flower_Pot_Diamond.png, Flower_Pot_Spades.png, Flower_Pot_Clubs.png
+-- Each file is a single card (71x95 at 1x, 142x190 at 2x).
+local POT_ATLAS = {}
+for _, suit in ipairs(SUITS) do
+    -- your Diamonds file is named "Diamond" (no s); the others match the suit name
+    local file = (suit == 'Diamonds') and 'Flower_Pot_Diamond.png' or ('Flower_Pot_' .. suit .. '.png')
+    POT_ATLAS[suit] = 'flower_pot_' .. suit:lower()
+    SMODS.Atlas{ key = POT_ATLAS[suit], path = file, px = 71, py = 95 }
+end
 
 ----------------------------------------------------------------------
 -- 1) Shared setup for the four hidden suit pots
@@ -28,7 +39,8 @@ local function hidden_pot(suit, def)
     def.no_collection = HIDE_POTS_FROM_COLLECTION -- true = not listed in the Jokers collection
     def.rarity = 2
     def.cost = 6
-    def.pos = def.pos or { x = 0, y = 6 } -- placeholder sprite, swap for your own atlas
+    def.atlas = POT_ATLAS[suit] -- each suit pot uses its own art
+    def.pos = { x = 0, y = 0 }
     def.in_pool = function(self, args) return false end -- never appears in shop/packs
     SMODS.Joker(def)
 end

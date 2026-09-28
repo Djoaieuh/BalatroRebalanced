@@ -173,15 +173,6 @@ return {
                     'and rerolls increment by {C:money}$1{} extra',
                 }
             },
-
-            b_ghost = {
-                name = 'Ghost Deck',
-                text = {
-                    '{C:blue}Spectral{} cards may',
-                    'appear in the shop,',
-                    'start with a {C:blue}Ouija{} card'
-                }
-            }
         },
 
         Voucher = {

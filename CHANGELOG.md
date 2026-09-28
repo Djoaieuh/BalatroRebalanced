@@ -5,6 +5,7 @@
 ### Added 
 - Support for JokerDisplay mod 
 - Highlighted shader now has sparkles 
+- Custom Sprite for each Flower Pot variant
 
 ### Fixed
 - Satelite not having the "Reworked" tag and not being correctly highlighted

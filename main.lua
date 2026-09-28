@@ -7,6 +7,11 @@ SMODS.Atlas{
     py = 95
 }
 
+SMODS.Atlas{ key = 'flower_pot_spades',  path = 'Flower_Pot_Spades.png',  px = 71, py = 95 }
+SMODS.Atlas{ key = 'flower_pot_clubs',   path = 'Flower_Pot_Clubs.png',   px = 71, py = 95 }
+SMODS.Atlas{ key = 'flower_pot_hearts',  path = 'Flower_Pot_Hearts.png',  px = 71, py = 95 }
+SMODS.Atlas{ key = 'flower_pot_diamond', path = 'Flower_Pot_Diamond.png', px = 71, py = 95 }
+
 
 --#endregion
 
@@ -1128,8 +1133,6 @@ SMODS.Joker:take_ownership('stone', {
         return nil
     end
 }, true)
-
-assert(SMODS.load_file("src/jokers/flowerPot.lua"))()
 
 SMODS.Joker:take_ownership('satellite', {
     blueprint_compat = false,
