@@ -1,0 +1,41 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+# 1) Boss Tag now only reacts to 'round_start_bonus' (never 'new_blind_choice'),
+#    which makes the vanilla boss-reroll branch unreachable.
+[[patches]]
+[patches.pattern]
+target = "tag.lua"
+pattern = "if not self.triggered and self.config.type == _context.type then"
+position = "at"
+payload = '''if not self.triggered and ((self.name == 'Boss Tag' and _context.type == 'round_start_bonus') or (self.name ~= 'Boss Tag' and self.config.type == _context.type)) then'''
+match_indent = true
+
+# 2) New behaviour: when the Boss Blind is selected, disable it.
+[[patches]]
+[patches.pattern]
+target = "tag.lua"
+pattern = "elseif _context.type == 'round_start_bonus' then"
+position = "after"
+payload = '''
+if self.name == 'Boss Tag' then
+    if G.GAME.blind_on_deck == 'Boss' then
+        self:yep('+', G.C.GREEN, function()
+            -- runs as an event, so the blind is fully set up by now.
+            -- No "not disabled" check on purpose: like each Chicot, every
+            -- disable() call undoes the boss effect once more (stacks).
+            if G.GAME.blind and G.GAME.blind.boss then
+                G.GAME.blind:disable()
+                play_sound('timpani')
+                delay(0.4)
+            end
+            return true
+        end)
+        self.triggered = true
+        return true
+    end
+    return
+end'''
+match_indent = true

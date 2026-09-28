@@ -305,6 +305,16 @@ return {
             }
         },
 
+        Tag = {
+            tag_boss = {
+                name = "Boss Tag",
+                text = {
+                    "Disables the next",
+                    "{C:attention}Boss Blind{} when selected",
+                },
+            },
+        },
+
         Other = {
             blue_seal = {
                 name = 'Blue Seal',

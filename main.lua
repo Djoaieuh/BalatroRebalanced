@@ -39,6 +39,8 @@ end
 
 assert(SMODS.load_file('highlight_changed.lua'))()
 
+assert(SMODS.load_file("shop_skip.lua"))()
+
 --#endregion
 
 --#region Hand Levels
@@ -1358,6 +1360,7 @@ local old_calculate_reroll_cost = calculate_reroll_cost
 function calculate_reroll_cost(skip_increment)
     old_calculate_reroll_cost(skip_increment)
 
+    -- Free rerolls already set the cost to 0, so no extra logic or cap is needed
     if G.GAME.current_round.free_rerolls > 0 then
         return
     end
@@ -1390,6 +1393,21 @@ function calculate_reroll_cost(skip_increment)
             )
         end
     end
+
+    -- D6 Tag cap: applied last so nothing above can push the cost past it
+    local cap = G.GAME.round_resets and G.GAME.round_resets.temp_reroll_cap
+    if cap and G.GAME.current_round.reroll_cost > cap then
+        G.GAME.current_round.reroll_cost = cap
+    end
+end
+
+-- Clear the cap when leaving the shop, so it only lasts for that one shop
+local toggle_shop_ref = G.FUNCS.toggle_shop
+G.FUNCS.toggle_shop = function(e)
+    if G.GAME and G.GAME.round_resets then
+        G.GAME.round_resets.temp_reroll_cap = nil
+    end
+    return toggle_shop_ref(e)
 end
 
 --#endregion    
@@ -1581,6 +1599,21 @@ SMODS.Back:take_ownership('ghost',{
 } , true)
 
 SMODS.Back:take_ownership ('black',{config = { hands = 0, joker_slot = 1 },} , true)
+
+--#endregion
+
+--#region Skip Tags
+
+SMODS.Tag:take_ownership('boss', {
+    in_pool = function(self, args)
+        if G.GAME and G.GAME.tags then
+            for _, t in ipairs(G.GAME.tags) do
+                if t.key == 'tag_boss' then return false end
+            end
+        end
+        return true
+    end,
+}, true)
 
 --#endregion
 

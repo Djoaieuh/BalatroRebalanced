@@ -1,0 +1,15 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+# D6 Tag: replace "rerolls start at $0" with "rerolls capped at $5".
+# The next line in the vanilla code (calculate_reroll_cost(true)) recalculates
+# the cost immediately, and d6_tag.lua applies the cap inside that function.
+[[patches]]
+[patches.pattern]
+target = "tag.lua"
+pattern = "G.GAME.round_resets.temp_reroll_cost = 0"
+position = "at"
+payload = "G.GAME.round_resets.temp_reroll_cap = 5"
+match_indent = true
