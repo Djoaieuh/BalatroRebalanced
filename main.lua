@@ -841,6 +841,13 @@ SMODS.Joker:take_ownership('j_loyalty_card', {
 
             if card.ability.extra.hands >= card.ability.extra.required then
                 card.ability.extra.ready = true
+
+                -- Same pattern as vanilla's own Loyalty Card: keep re-triggering
+                -- the shake/wiggle for as long as `ready` stays true. Stops
+                -- mattering once the card cashes out and dissolves below.
+                local eval = function(c) return c.ability.extra.ready end
+                juice_card_until(card, eval, true)
+
                 return {
                     message = 'Ready!',
                     colour = G.C.GREEN
@@ -1402,7 +1409,6 @@ SMODS.Voucher:take_ownership('hone', {
         G.GAME.uncommon_mod = 0.50 / 0.25
         G.GAME.rare_mod = 0.05 / 0.05
 
-        print("HONE:", G.GAME.common_mod, G.GAME.uncommon_mod, G.GAME.rare_mod)
     end
 }, true)
 
@@ -1412,7 +1418,6 @@ SMODS.Voucher:take_ownership('glow_up', {
         G.GAME.uncommon_mod = 0.50 / 0.25
         G.GAME.rare_mod = 0.10 / 0.05
 
-        print("GLOW UP:", G.GAME.common_mod, G.GAME.uncommon_mod, G.GAME.rare_mod)
     end
 }, true)
 

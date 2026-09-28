@@ -36,6 +36,23 @@ const float GLASS_WIDTH      = 0.75;  // how soft/wide the band is
 const float GLITTER_STRENGTH = 0.1;  // fine sparkle grain
 const float GLITTER_SCALE    = 70.0;  // grain density
 
+// Star sparkles — the "brand new" twinkles. Four-point yellow stars that pop in
+// at random spots, flare up, and fade out.
+const float SPARKLE_STRENGTH = 0.7;   // overall brightness of the stars (0..~1.5)
+const float SPARKLE_CHANCE   = 0.5;  // chance a given cell has a star during a given cycle (0..1)
+const float SPARKLE_ACTIVE   = 0.45;  // share of each cycle a star is visible (rest is downtime)
+const float SPARKLE_PERIOD_SCALE = 1.5; // multiplies every star's cycle length; higher = slower twinkle
+const vec3  SPARKLE_COLOUR   = vec3(1.0, 0.50, 0.05);   // orange body of the star
+const vec3  SPARKLE_CORE     = vec3(1.0, 0.72, 0.20);   // amber centre (kept off-white so it still shows on white art)
+// Big stars (rarer, slower)
+const float BIG_DENSITY      = 3.0;   // cells across the card height; higher = more, smaller stars
+const float BIG_SIZE         = 1.2;  // arm length inside its cell (keep <= 0.25 so arms don't clip)
+// Small stars (more frequent, faster)
+const float SMALL_DENSITY    = 5.0;
+const float SMALL_SIZE       = 0.8;
+
+const float PI = 3.14159265;
+
 // ---------------------------------------------------------------
 // dissolve_mask: verbatim from foil.fs
 // ---------------------------------------------------------------
@@ -84,10 +101,50 @@ float bump(float x, float w)
 	return exp(-k*k);
 }
 
-// Cheap pseudo-random hash, used for the glitter grain
+// Cheap pseudo-random hash, used for the glitter grain and the star sparkles
 float hash(vec2 p)
 {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+// One layer of twinkling four-point stars.
+// The card is split into a grid of cells. Each cell independently rolls, every cycle,
+// whether it gets a star, and where inside the cell it sits — so stars keep popping up
+// in new places instead of blinking at fixed spots.
+// Returns vec2(star, core): star = the four-point shape, core = the bright centre glow.
+vec2 sparkle_layer(vec2 suv, float density, float seed, float period_lo, float period_hi, float size_max)
+{
+    vec2 g  = suv * density;
+    vec2 id = floor(g);
+    vec2 f  = fract(g) - 0.5;
+
+    float h      = hash(id + seed);
+    float period = mix(period_lo, period_hi, h) * SPARKLE_PERIOD_SCALE;
+    float tt     = polished.g / period + h * 17.0;   // per-cell time offset so cells aren't in sync
+    float cyc    = floor(tt);                        // which cycle this cell is on
+    float ph     = fract(tt);                        // progress through the cycle, 0..1
+
+    // Fresh random roll every cycle
+    vec2 cid = id + vec2(cyc * 1.618, seed * 3.3);
+    if (hash(cid + 11.1) > SPARKLE_CHANCE) return vec2(0.);
+    if (ph > SPARKLE_ACTIVE) return vec2(0.);
+
+    float env = sin(ph / SPARKLE_ACTIVE * PI);       // grows, peaks, fades
+
+    // Random spot inside the cell (kept away from the edges so the arms don't clip)
+    vec2 off = (vec2(hash(cid + 3.3), hash(cid + 8.8)) - 0.5) * 0.36;
+    vec2 p = f - off;
+
+    float size = max(size_max * (0.6 + 0.4 * hash(cid + 5.5)) * env, 0.0001);
+
+    // Astroid metric: sqrt(|x|) + sqrt(|y|) gives a four-point star with concave sides
+    vec2 a = abs(p);
+    float d = sqrt(a.x) + sqrt(a.y);
+    float star = 1.0 - smoothstep(0.0, sqrt(size), d);
+    star *= star;
+
+    float core = exp(-dot(p, p) / (size * size * 0.15));
+    return vec2(star, core);
 }
 
 vec4 effect( vec4 colour, Image texture, vec2 texture_coords, vec2 screen_coords )
@@ -123,6 +180,17 @@ vec4 effect( vec4 colour, Image texture, vec2 texture_coords, vec2 screen_coords
     float g = hash(grain_uv + floor(polished.g * 2.0));     // ticks over a couple times/sec
     float glitter = smoothstep(0.95, 1.0, g);               // only the brightest flecks show
 
+    // 2d. Twinkling star sparkles. x is scaled by the sprite's aspect ratio so the
+    // grid cells (and therefore the stars) are square instead of stretched.
+    float aspect = texture_details.b / texture_details.a;
+    vec2 suv = vec2(uv.x * aspect, uv.y);
+    vec2 big   = sparkle_layer(suv, BIG_DENSITY,   1.0, 2.2, 4.0, BIG_SIZE);
+    vec2 small = sparkle_layer(suv, SMALL_DENSITY, 5.0, 1.2, 2.4, SMALL_SIZE);
+    float sp_star = clamp(big.x + small.x, 0., 1.);
+    float sp_core = clamp(big.y + small.y, 0., 1.);
+    float sparkle = clamp(sp_star + 0.6*sp_core, 0., 1.);
+    vec3 sparkle_col = mix(SPARKLE_COLOUR, SPARKLE_CORE, sp_core);
+
     // 3. Bevel rim that catches light, brighter as the band passes
     vec2 e = min(uv, 1. - uv);
     float rim = 1. - smoothstep(0., 0.05, min(e.x, e.y));
@@ -136,10 +204,17 @@ vec4 effect( vec4 colour, Image texture, vec2 texture_coords, vec2 screen_coords
                       + GLASS_STRENGTH*glass
                       + GLITTER_STRENGTH*glitter, 0., 1.);
 
+    // Blend the stars in as their own light source: colours are weighted by how much
+    // light each one contributes, so a star over a dark patch is properly yellow
+    // instead of being washed out to the sheen's cool blue-white.
+    float sp = SPARKLE_STRENGTH * sparkle;
+    float total = light + sp;
+    vec3 final_col = (shine_col * light + sparkle_col * sp) / max(total, 0.0001);
+
     // Run the mask with the sprite's own alpha so the overlay dissolves in sync with the card,
-    // then scale by the light amount.
-    vec4 masked = dissolve_mask(vec4(shine_col, tex.a), texture_coords, uv);
-    masked.a *= light;
+    // then scale by the total light amount.
+    vec4 masked = dissolve_mask(vec4(final_col, tex.a), texture_coords, uv);
+    masked.a *= clamp(total, 0., 1.);
     return masked;
 }
 

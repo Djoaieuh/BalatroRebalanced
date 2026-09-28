@@ -11,6 +11,20 @@
     you passed to take_ownership (e.g. take_ownership('marble', ...) is
     j_marble, NOT j_marble_joker). Fixed a couple I had wrong last round
     (marble, glass, stone).
+
+    Styling convention (confirmed against JokerDisplay's own source):
+    - Use text_config = { colour = X } to colour a whole `text` array
+      uniformly (e.g. the "+" and the number share one colour). Only set
+      colour per-node when nodes genuinely differ, like Scholar's
+      chips/mult split.
+    - Active/Inactive indicators go in reminder_text, wrapped in literal
+      "(" / ")" nodes — exactly like the real j_dna entry. This is what
+      makes status text render at DNA's size automatically; putting it
+      in `text` (like an earlier version did) is why it was oversized.
+    - Where a joker has its OWN localization keys or literal status
+      strings (Loyalty Card, Throwback), those are used instead of the
+      generic jdis_active/jdis_inactive pair, since those keys don't
+      apply to them.
 ]]
 
 local jd_def = JokerDisplay.Definitions
@@ -26,9 +40,10 @@ local jd_def = JokerDisplay.Definitions
 --#region Cloud 9 (j_cloud_9)
 jd_def["j_cloud_9"] = {
     text = {
-        { text = "$", colour = G.C.MONEY },
-        { ref_table = "card.joker_display_values", ref_value = "amount", colour = G.C.MONEY }
+        { text = "$" },
+        { ref_table = "card.joker_display_values", ref_value = "amount" }
     },
+    text_config = { colour = G.C.MONEY },
     calc_function = function(card)
         local nine_tally = card.ability.count or 0
         if G.playing_cards then
@@ -44,9 +59,8 @@ jd_def["j_cloud_9"] = {
 --#endregion
 
 --#region Erosion (j_erosion)
--- Using the standard Xmult badge template (border_nodes) instead of plain
--- text — this is what gives the white-on-red bordered look, and defaults
--- to G.C.XMULT for the border colour automatically.
+-- border_nodes handles its own colour (defaults to G.C.XMULT), no
+-- text_config needed.
 jd_def["j_erosion"] = {
     text = {
         {
@@ -94,12 +108,14 @@ jd_def["j_campfire"] = {
 --#region Satellite (j_satellite)
 jd_def["j_satellite"] = {
     text = {
-        { text = "$", colour = G.C.MONEY },
-        { ref_table = "card.joker_display_values", ref_value = "amount", colour = G.C.MONEY }
+        { text = "$" },
+        { ref_table = "card.joker_display_values", ref_value = "amount" }
     },
+    text_config = { colour = G.C.MONEY },
     reminder_text = {
-        { ref_table = "card.joker_display_values", ref_value = "hand_name", colour = G.C.ORANGE }
+        { ref_table = "card.joker_display_values", ref_value = "hand_name" }
     },
+    reminder_text_config = { colour = G.C.ORANGE },
     calc_function = function(card)
         local display_hand = card.ability.hand
         if not display_hand and G.GAME and G.GAME.hands then
@@ -127,9 +143,10 @@ jd_def["j_satellite"] = {
 -- of whatever hardcoded/mismatched comparison the built-in def was using.
 jd_def["j_vagabond"] = {
     text = {
-        { text = "+", colour = G.C.PURPLE },
-        { ref_table = "card.joker_display_values", ref_value = "bonus", colour = G.C.PURPLE }
+        { text = "+" },
+        { ref_table = "card.joker_display_values", ref_value = "bonus" }
     },
+    text_config = { colour = G.C.PURPLE },
     calc_function = function(card)
         card.joker_display_values.bonus = (G.GAME.dollars <= card.ability.extra) and 1 or 0
     end
@@ -145,9 +162,10 @@ jd_def["j_matador"] = { text = {}, reminder_text = {} }
 -- reading your extra.mult = 2 change. Reading it directly instead.
 jd_def["j_fortune_teller"] = {
     text = {
-        { text = "+", colour = G.C.MULT },
-        { ref_table = "card.joker_display_values", ref_value = "mult", colour = G.C.MULT }
+        { text = "+" },
+        { ref_table = "card.joker_display_values", ref_value = "mult" }
     },
+    text_config = { colour = G.C.MULT },
     calc_function = function(card)
         card.joker_display_values.mult = card.ability.extra.mult *
             (G.GAME.consumeable_usage_total and G.GAME.consumeable_usage_total.tarot or 0)
@@ -159,11 +177,14 @@ jd_def["j_fortune_teller"] = {
 -- Live preview: +1 if the current hand contains an Ace AND qualifies as
 -- a Straight, +0 otherwise. Guards against poker_hands['Straight'] being
 -- nil (crashed 'next' when nothing scores as a Straight yet).
+-- Colour corrected to G.C.SECONDARY_SET.Tarot — that's what the real
+-- vanilla j_superposition entry uses (Tarot-themed effect), not purple.
 jd_def["j_superposition"] = {
     text = {
-        { text = "+", colour = G.C.PURPLE },
-        { ref_table = "card.joker_display_values", ref_value = "bonus", colour = G.C.PURPLE }
+        { text = "+" },
+        { ref_table = "card.joker_display_values", ref_value = "bonus" }
     },
+    text_config = { colour = G.C.SECONDARY_SET.Tarot },
     calc_function = function(card)
         local text, poker_hands, scoring_hand = JokerDisplay.evaluate_hand()
         local is_straight = poker_hands and poker_hands['Straight'] and next(poker_hands['Straight'])
@@ -182,51 +203,43 @@ jd_def["j_superposition"] = {
 --#endregion
 
 --#region Glass Joker (j_glass)
--- Your patch makes the vanilla scoring check unconditionally skip
--- ("if false then"). Wait — that patch is actually on Stone Joker, see
--- below. Glass Joker itself: calculate just returns nil in main.lua, no
--- corresponding lovely patch was shown, so it's unclear if the deck-wide
--- Xmult tracking still runs elsewhere or is fully dead. Blanking for now;
--- tell me if Glass Joker's effect moved somewhere and I'll point this at
--- the real source instead.
 jd_def["j_glass"] = { text = {}, reminder_text = {} }
 --#endregion
 
 --#region Steel Joker (j_steel_joker)
--- No display — passive Xmult scaling is fully disabled (no_steel_joker_effect),
--- replaced by the guaranteed-draw mechanic, and that's not something
--- worth representing as a number on the card.
 jd_def["j_steel_joker"] = { text = {}, reminder_text = {} }
 --#endregion
 
 --#region Stone Joker (j_stone)
--- Confirmed: this is now a static effect ("Stone Cards now count towards
--- poker hands"), not a scaling number — matches the card.lua patch that
--- unconditionally disables the old passive Chips scoring. No display
--- entry needed. This line just overwrites JokerDisplay's built-in j_stone
--- definition (which still expects the old stone_tally-based Chips value)
--- with an empty one, so it stops trying to read a value that no longer
--- means anything and can't crash.
 jd_def["j_stone"] = { text = {}, reminder_text = {} }
 --#endregion
 
 --#region Shoot the Moon (j_shoot_the_moon)
--- Active state: previews whether the current highlighted hand would
--- trigger the suit-conversion (first card in the played hand is a Queen).
--- Styling matches DNA's Active/Inactive format (bracketed, green vs.
--- G.C.UI.TEXT_INACTIVE), scale brought down to match DNA's size.
+-- UNVERIFIED. take_ownership('shoot_the_moon', {blueprint_compat = false})
+-- shows no config, no calculate function, no ability.extra — the lovely
+-- patch only deletes the vanilla bonus. The "convert suits to match a
+-- leading Queen" mechanic has not been confirmed anywhere in the source
+-- shown to me; it may live in a main.lua evaluate_play hook, or may not
+-- currently exist at all. This preview logic is a guess at what such a
+-- hook would check, not a confirmed read of an actual mechanic. Paste
+-- the evaluate_play hook (or confirm there isn't one) before trusting
+-- this in-game.
 jd_def["j_shoot_the_moon"] = {
-    text = {
-        { ref_table = "card.joker_display_values", ref_value = "status", scale = 0.35 }
+    reminder_text = {
+        { text = "(" },
+        { ref_table = "card.joker_display_values", ref_value = "active_text" },
+        { text = ")" },
     },
     calc_function = function(card)
         local text, poker_hands, scoring_hand = JokerDisplay.evaluate_hand()
         local first_card = scoring_hand and scoring_hand[1]
-        card.joker_display_values.status = (first_card and first_card:get_id() == 12) and "[Active!]" or "[Inactive]"
+        card.joker_display_values.is_active = first_card and first_card:get_id() == 12
+        card.joker_display_values.active_text = localize("jdis_" ..
+            (card.joker_display_values.is_active and "active" or "inactive"))
     end,
     style_function = function(card, text, reminder_text, extra)
-        if text and text.children[1] then
-            text.children[1].config.colour = (card.joker_display_values.status == "[Active!]") and G.C.GREEN or
+        if reminder_text and reminder_text.children[2] then
+            reminder_text.children[2].config.colour = card.joker_display_values.is_active and G.C.GREEN or
                 G.C.UI.TEXT_INACTIVE
         end
         return false
@@ -235,19 +248,24 @@ jd_def["j_shoot_the_moon"] = {
 --#endregion
 
 --#region Marble Joker (j_marble)
--- Active! on the first hand of the round (when the transform can trigger),
--- [Inactive] otherwise. Styling matches DNA's format, scale brought down
--- to match DNA's size.
+-- Active on the first hand of the round (when the transform can trigger),
+-- Inactive otherwise. Uses DNA's real reminder_text pattern with the
+-- generic jdis_active/jdis_inactive keys, which is correct here since
+-- Marble Joker doesn't define its own status strings.
 jd_def["j_marble"] = {
-    text = {
-        { ref_table = "card.joker_display_values", ref_value = "status", scale = 0.35 }
+    reminder_text = {
+        { text = "(" },
+        { ref_table = "card.joker_display_values", ref_value = "active_text" },
+        { text = ")" },
     },
     calc_function = function(card)
-        card.joker_display_values.status = (G.GAME.current_round.hands_played == 0) and "[Active!]" or "[Inactive]"
+        card.joker_display_values.is_active = G.GAME.current_round.hands_played == 0
+        card.joker_display_values.active_text = localize("jdis_" ..
+            (card.joker_display_values.is_active and "active" or "inactive"))
     end,
     style_function = function(card, text, reminder_text, extra)
-        if text and text.children[1] then
-            text.children[1].config.colour = (G.GAME.current_round.hands_played == 0) and G.C.GREEN or
+        if reminder_text and reminder_text.children[2] then
+            reminder_text.children[2].config.colour = card.joker_display_values.is_active and G.C.GREEN or
                 G.C.UI.TEXT_INACTIVE
         end
         return false
@@ -260,24 +278,31 @@ jd_def["j_onyx_agate"] = { text = {}, reminder_text = {} }
 --#endregion
 
 --#region Loyalty Card (j_loyalty_card)
--- Same Active/Inactive pattern as Marble Joker/DNA, plus the hands-left
--- countdown while it's charging up. Scale brought down to match DNA's size.
+-- Real fields (confirmed from take_ownership source): extra.hands,
+-- extra.required, extra.every, extra.x_mult, extra.ready. Status text
+-- matches the mod's own loc_vars exactly: "(Ready !)" when ready,
+-- "(N hands left!)" while counting up — not the generic Active/Inactive
+-- pair, since this joker writes its own status string.
+-- NOTE: your take_ownership call for this one is 'j_loyalty_card' (with
+-- the j_ prefix already included), unlike shoot_the_moon/throwback below
+-- which pass the bare name. If SMODS always prepends j_, this joker's
+-- real key may end up as j_j_loyalty_card — worth checking the actual
+-- registered key in-game. This override targets j_loyalty_card, matching
+-- what worked earlier in this conversation.
 jd_def["j_loyalty_card"] = {
-    text = {
-        { ref_table = "card.joker_display_values", ref_value = "status", scale = 0.35 }
-    },
     reminder_text = {
-        { ref_table = "card.joker_display_values", ref_value = "hands_left" }
+        { ref_table = "card.joker_display_values", ref_value = "status_text" }
     },
     calc_function = function(card)
         local extra = card.ability.extra
-        card.joker_display_values.status = extra.ready and "[Active!]" or "[Inactive]"
         local remaining = math.max(0, extra.required - extra.hands)
-        card.joker_display_values.hands_left = remaining .. " hands left"
+        card.joker_display_values.is_active = extra.ready
+        card.joker_display_values.status_text = extra.ready and "(Ready !)" or ("(" .. remaining .. " hands left!)")
     end,
     style_function = function(card, text, reminder_text, extra)
-        if text and text.children[1] then
-            text.children[1].config.colour = card.ability.extra.ready and G.C.GREEN or G.C.UI.TEXT_INACTIVE
+        if reminder_text and reminder_text.children[1] then
+            reminder_text.children[1].config.colour = card.joker_display_values.is_active and G.C.GREEN or
+                G.C.UI.TEXT_INACTIVE
         end
         return false
     end
@@ -285,20 +310,28 @@ jd_def["j_loyalty_card"] = {
 --#endregion
 
 --#region Throwback (j_throwback)
--- Note: card.ability.extra.used means "already triggered this round," so
--- Active (green) is when it's NOT used yet (still able to trigger),
--- Inactive (grey) is once it's been spent for the round. Styling matches
--- DNA's format, scale brought down to match DNA's size.
+-- Real field (confirmed): extra.used. Not used = still armable this
+-- round (Active), used = already committed, waiting on the pack/reset
+-- (Inactive). Uses the mod's real localization keys, k_throwback_left /
+-- k_throwback_done, instead of the generic jdis_ pair, since Throwback
+-- defines its own. Wrapped in parens to match DNA's visual convention —
+-- unconfirmed whether the mod's own loc_txt already includes parens
+-- around #1#; check in-game for doubled parens.
 jd_def["j_throwback"] = {
-    text = {
-        { ref_table = "card.joker_display_values", ref_value = "status", scale = 0.35 }
+    reminder_text = {
+        { text = "(" },
+        { ref_table = "card.joker_display_values", ref_value = "status_text" },
+        { text = ")" },
     },
     calc_function = function(card)
-        card.joker_display_values.status = card.ability.extra.used and "[Inactive]" or "[Active!]"
+        card.joker_display_values.is_active = not card.ability.extra.used
+        card.joker_display_values.status_text = card.ability.extra.used and localize('k_throwback_done') or
+            localize('k_throwback_left')
     end,
     style_function = function(card, text, reminder_text, extra)
-        if text and text.children[1] then
-            text.children[1].config.colour = card.ability.extra.used and G.C.UI.TEXT_INACTIVE or G.C.GREEN
+        if reminder_text and reminder_text.children[2] then
+            reminder_text.children[2].config.colour = card.joker_display_values.is_active and G.C.GREEN or
+                G.C.UI.TEXT_INACTIVE
         end
         return false
     end
@@ -306,15 +339,10 @@ jd_def["j_throwback"] = {
 --#endregion
 
 --#region Flower Pot (j_flower_pot) — base/streak stage only
--- The four hidden evolved pots (j_flower_pot_hearts/diamonds/spades/clubs)
--- are all static flat-bonus jokers (no per-turn changing number), so their
--- vanilla loc_vars text is enough — no JokerDisplay override needed there,
--- and since they're brand-new custom keys there's no stale built-in
--- definition to conflict with anyway.
--- The BASE pot (before it evolves) tracks a same-suit streak though, and
--- vanilla's own Flower Pot display definition (if it has one) won't know
--- about your `suit`/`count`/`needed` fields, so this one does need an
--- override.
+-- Text colour now tracks the current streak suit (lightened, same as
+-- Ancient/Castle/Idol elsewhere in this mod — raw G.C.SUITS.Clubs and
+-- .Spades are near-black and unreadable as plain text, hence lighten()).
+-- Falls back to the inactive grey when there's no streak yet.
 jd_def["j_flower_pot"] = {
     text = {
         { ref_table = "card.joker_display_values", ref_value = "count" },
@@ -328,9 +356,71 @@ jd_def["j_flower_pot"] = {
         local extra = card.ability.extra
         card.joker_display_values.count = extra.count
         card.joker_display_values.suit_text = extra.suit and localize(extra.suit, 'suits_singular') or "No streak yet"
+    end,
+    style_function = function(card, text, reminder_text, extra)
+        local suit = card.ability.extra.suit
+        local colour = suit and lighten(G.C.SUITS[suit], 0.35) or G.C.UI.TEXT_INACTIVE
+        if text and text.children then
+            for _, child in ipairs(text.children) do
+                if child.config then child.config.colour = colour end
+            end
+        end
+        if reminder_text and reminder_text.children[1] then
+            reminder_text.children[1].config.colour = colour
+        end
+        return false
     end
 }
 --#endregion
+
+--#region Flower Pot — Clubs (j_flower_pot_clubs)
+-- Copied directly from the real j_blueprint entry — your Clubs pot's
+-- calculate() calls SMODS.blueprint_effect the same way vanilla
+-- Blueprint does, copying whatever joker sits to its right, so its
+-- display should behave identically: green/red compatibility badge plus
+-- JokerDisplay.copy_display mirroring the copied joker's own display.
+jd_def["j_flower_pot_clubs"] = {
+    reminder_text = {
+        { text = "(" },
+        { ref_table = "card.joker_display_values", ref_value = "blueprint_compat", colour = G.C.RED },
+        { text = ")" }
+    },
+    calc_function = function(card)
+        local copied_joker, copied_debuff = JokerDisplay.calculate_blueprint_copy(card)
+        card.joker_display_values.blueprint_compat = localize('k_incompatible')
+        JokerDisplay.copy_display(card, copied_joker, copied_debuff)
+    end,
+    get_blueprint_joker = function(card)
+        for i = 1, #G.jokers.cards do
+            if G.jokers.cards[i] == card then
+                return G.jokers.cards[i + 1]
+            end
+        end
+        return nil
+    end
+}
+--#endregion
+
+--#region Flower Pot — Spades (j_flower_pot_spades)
+-- Nothing to display, per your call. Explicit blank, same convention as
+-- Matador/Onyx Agate above.
+jd_def["j_flower_pot_spades"] = { text = {}, reminder_text = {} }
+--#endregion
+
+--#region Flower Pot — Diamonds (j_flower_pot_diamonds)
+-- Nothing to display, per your call.
+jd_def["j_flower_pot_diamonds"] = { text = {}, reminder_text = {} }
+--#endregion
+
+--[[
+    Flower Pot — Hearts (j_flower_pot_hearts): deliberately no entry here.
+    "Same as Juggler" — Juggler's real vanilla entry is `j_juggler = {}`,
+    an empty table, meaning JokerDisplay applies NO custom display to it
+    at all (falls back to whatever the base game shows by default). So
+    matching Juggler means not overriding this key, not overriding it
+    with an empty one — those aren't quite the same thing, and the
+    correct match for "nothing, like Juggler" is simply not touching it.
+]]
 
 --[[
     Confirmed keys, no override written (need more info to do these safely
