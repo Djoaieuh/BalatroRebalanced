@@ -590,14 +590,14 @@ end,
         if banned_hand then
             G.GAME.csau_black_hole_banned_hands[banned_hand] = true
             card_eval_status_text(card, 'extra', nil, nil, nil, {
-                message = localize('k_csau_hand_banned_ex') .. localize(banned_hand, 'poker_hands'),
+                message = "Banned: " .. localize(banned_hand, 'poker_hands'),
                 colour = G.C.RED
-            })
+        })
         else
-            card_eval_status_text(card, 'extra', nil, nil, nil, {
-                message = localize('k_csau_none_left_ex'),
-                colour = G.C.RED
-            })
+        card_eval_status_text(card, 'extra', nil, nil, nil, {
+            message = "None left!",
+            colour = G.C.RED
+        })
         end
 
         delay(0.5)
