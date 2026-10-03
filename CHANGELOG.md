@@ -5,10 +5,10 @@
 ### Changed
 
 - Reworked skipping mechanic entirely
-- Reworked several skip tags. Check PATCHNOTES.md to see changes
-- Bull and Bootstraps effect has been reworked. Check PATCHNOTES.md to see changes
+- Reworked several skip tags. Check the [patch notes](https://github.com/Djoaieuh/BalatroRebalanced/blob/main/PATCHNOTES.md) to see changes
+- Bull and Bootstraps effect has been reworked. Check the [patch notes](https://github.com/Djoaieuh/BalatroRebalanced/blob/main/PATCHNOTES.md) to see changes
 
-### Fixed 
+### Fixed
 
 - Marble Joker crashing the game when played with Stone Cards
 
