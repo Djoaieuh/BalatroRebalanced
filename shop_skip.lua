@@ -1,21 +1,17 @@
 -- shop_skip.lua
--- After every blind (including the boss), before the shop opens, show a
--- blind-style panel: "Proceed to Shop" + shop logo, and below it
--- "or [Tag preview] [Skip Shop]". Skip = get THAT tag, straight back to blind select.
--- Coupon Tag: if you own one, skipping still gives the tag but also opens the shop.
--- NOTE: built from memory of vanilla Balatro; verify names against your dump.
+-- After every blind, shows a panel before the shop opens: "Proceed to Shop",
+-- or "Skip Shop" to take a tag and go straight back to blind select.
+-- With a Coupon Tag owned, skipping still gives the tag and opens the shop.
 
--- Tune these to fit your screen
-local PANEL_HEIGHT = 10    -- original height
-local PANEL_Y_OFFSET = 3  -- negative = move panel up, positive = move it down
+local PANEL_HEIGHT = 10
+local PANEL_Y_OFFSET = 3  -- negative = up, positive = down
+local PANEL_DELAY = 0.25  -- seconds between cash out and the panel appearing
 
--- Remove the old blind-skipping entirely (safety net)
+-- disable vanilla blind skipping
 G.FUNCS.skip_blind = function(e) end
 
----------------------------------------------------------------------
--- Tag roll: done once per shop visit and stored in G.GAME, so the
--- preview always matches the reward (and survives save/reload)
----------------------------------------------------------------------
+-- The tag is rolled once per shop visit and stored in G.GAME so the
+-- preview matches the reward and survives save/reload
 local function roll_skip_tag_key()
   local key = get_next_tag_key('shopskip')
   for _ = 1, 10 do
@@ -25,16 +21,12 @@ local function roll_skip_tag_key()
   return key
 end
 
----------------------------------------------------------------------
--- UI
----------------------------------------------------------------------
 function create_UIBox_shop_choice()
-  -- tag preview (same approach as vanilla create_UIBox_blind_tag)
   local _tag = Tag(G.GAME.shop_skip_tag_key, nil, G.GAME.blind_on_deck)
   local _tag_ui, _tag_sprite = _tag:generate_UI()
-  _tag_sprite.states.collide.can = true -- so hovering the tag shows its tooltip
+  _tag_sprite.states.collide.can = true -- lets hovering the tag show its tooltip
 
-  -- shop logo (falls back to nothing if the atlas isn't found)
+  -- no logo row if the atlas isn't found
   local sign_row = nil
   if G.ANIMATION_ATLAS and G.ANIMATION_ATLAS['shop_sign'] then
     local sign = AnimatedSprite(0, 0, 2.6, 1.3, G.ANIMATION_ATLAS['shop_sign'], {x = 0, y = 0})
@@ -47,7 +39,6 @@ function create_UIBox_shop_choice()
     }}
   end
 
-  -- "or [tag] [skip button]" block, same layout as the old blind skip
   local extras = {n = G.UIT.R, config = {id = 'tag_container', ref_table = _tag, align = "cm"}, nodes = {
     {n = G.UIT.R, config = {align = 'tm', minh = 0.65}, nodes = {
       {n = G.UIT.T, config = {text = localize('k_or'), scale = 0.55, colour = G.C.WHITE, shadow = true}},
@@ -86,21 +77,32 @@ local function remove_choice_ui()
   end
 end
 
----------------------------------------------------------------------
--- Intercept the shop: show the choice instead of building the shop
----------------------------------------------------------------------
 local update_shop_ref = Game.update_shop
 function Game:update_shop(dt)
   if not G.STATE_COMPLETE then
     -- G.load_shop_jokers is set when loading a save that was mid-shop;
-    -- don't ask again in that case.
+    -- don't ask again in that case
     if not G.GAME.shop_choice_made and not G.load_shop_jokers then
       G.STATE_COMPLETE = true -- stops vanilla from building the shop
       G.GAME.shop_skip_tag_key = G.GAME.shop_skip_tag_key or roll_skip_tag_key()
-      G.shop_choice = UIBox{
-        definition = create_UIBox_shop_choice(),
-        config = {align = 'cm', offset = {x = 0, y = PANEL_Y_OFFSET}, major = G.ROOM_ATTACH, bond = 'Weak'}
-      }
+
+      -- delayed so a fast double-click on Cash Out can't hit "Proceed to Shop"
+      -- before the panel is visible
+      G.E_MANAGER:add_event(Event({
+        trigger = 'after',
+        delay = PANEL_DELAY,
+        blocking = false,
+        blockable = false,
+        func = function()
+          if G.STATE == G.STATES.SHOP and not G.shop_choice then
+            G.shop_choice = UIBox{
+              definition = create_UIBox_shop_choice(),
+              config = {align = 'cm', offset = {x = 0, y = PANEL_Y_OFFSET}, major = G.ROOM_ATTACH, bond = 'Weak'}
+            }
+          end
+          return true
+        end
+      }))
       return
     end
     G.GAME.shop_choice_made = nil -- consumed; next shop asks again
@@ -108,13 +110,10 @@ function Game:update_shop(dt)
   return update_shop_ref(self, dt)
 end
 
----------------------------------------------------------------------
--- Button callbacks
----------------------------------------------------------------------
 G.FUNCS.shop_choice_enter = function(e)
   stop_use()
   remove_choice_ui()
-  G.GAME.shop_skip_tag_key = nil -- unused this time; new roll next shop
+  G.GAME.shop_skip_tag_key = nil -- unused; new roll next shop
   G.GAME.shop_choice_made = true
   G.STATE_COMPLETE = false -- next update_shop builds the shop as normal
 end
@@ -123,21 +122,20 @@ G.FUNCS.shop_choice_skip = function(e)
   stop_use()
   remove_choice_ui()
 
-  -- find a Coupon Tag you already own BEFORE adding the new tag,
-  -- so a Coupon Tag won't consume itself
+  -- grab an owned Coupon Tag before adding the new tag so it can't consume itself
   local coupon
   for _, t in ipairs(G.GAME.tags) do
     if t.name == 'Coupon Tag' and not t.triggered then coupon = t; break end
   end
 
-  -- count the skip first, so Skip Tag includes this one (same order as vanilla)
+  -- count the skip first so Skip Tag includes this one
   G.GAME.skips = (G.GAME.skips or 0) + 1
 
   local key = G.GAME.shop_skip_tag_key or roll_skip_tag_key()
   G.GAME.shop_skip_tag_key = nil
   add_tag(Tag(key, nil, G.GAME.blind_on_deck))
 
-  -- fire immediate tags (Skip Tag, Top-up, Economy...) like vanilla skip_blind does
+  -- fire immediate tags (Skip Tag, Top-up, Economy...) like vanilla skip_blind
   G.E_MANAGER:add_event(Event({
     trigger = 'immediate',
     func = function()

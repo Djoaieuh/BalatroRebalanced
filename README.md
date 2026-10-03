@@ -22,22 +22,24 @@ If you've ever picked up a Joker and thought "why would anyone ever use this," t
 
 **Alternatively:**
 
-- Download the [Balatro Mod Manager](https://github.com/skyline69/balatro-mod-manager) and install the mod directly from there.
+- If you have Thunderstore installed, you can directly download the mod from its page [here](https://thunderstore.io/c/balatro/p/Djoaieuh/BalatroRebalanced/)
+
+- You can also install it from the [in-game mod manager](https://codeberg.org/balafrost/imm) (IMM) without leaving Balatro.
 
 ## What's Changed
 
 If you are looking to see the differences between this mod and Vanilla Balatro click [here](https://github.com/Djoaieuh/BalatroRebalanced/blob/main/PATCHNOTES.md) 
 
-## Compatibility
+## Feedback
 
-This is my first mod, and it is still an alpha, so other mods (especially ones that modify gameplay) are likely to conflict with this one and may crash your game. If you run into a compatibility issue, please [open an issue](https://github.com/Djoaieuh/BalatroRebalanced/issues) and I'll work on fixing it.
+Want to share feedback, suggest changes, or talk balance? I have a thread for the mod on the Balatro Discord server: [Balatro Rebalanced thread](https://discord.com/channels/1116389027176787968/1553103734223933522).
+
+For bugs and crashes, please [open an issue](https://github.com/Djoaieuh/BalatroRebalanced/issues) on GitHub instead, so they're easier to track.
 
 ## Credits
 
 Big thanks to the creators of the [**Vanilla Remade**](https://github.com/nh6574/VanillaRemade/tree/main) project, which served as a great reference for many of the changes in this mod.
 
 ## License
-
-[#license](#license)
 
 This project is licensed under the [GPL-3.0 License](LICENSE).
