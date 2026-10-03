@@ -26,12 +26,8 @@ end
 
 --#region File Loading
 
-print("MOD PATH: " .. tostring(SMODS.current_mod.path))
-print("LOOKING IN: " .. tostring(SMODS.current_mod.path .. "src/jokers"))
-
 local jokers_src = SMODS.NFS.getDirectoryItems(SMODS.current_mod.path .. "src/jokers")
 
-print("FILES FOUND: " .. tostring(#jokers_src))
 
 for _, file in ipairs(jokers_src) do
     assert(SMODS.load_file("src/jokers/" .. file))()
@@ -1936,18 +1932,6 @@ function SMODS.create_card(t)
         t.rarity = 0.9
     end
     return create_card_ref(t)
-end
-
--- Single toggle_shop hook: clears BOTH the D6 reroll cap and the shop rule when leaving the shop
-local toggle_shop_ref = G.FUNCS.toggle_shop
-G.FUNCS.toggle_shop = function(e)
-    if G.GAME then
-        if G.GAME.round_resets then
-            G.GAME.round_resets.temp_reroll_cap = nil
-        end
-        G.GAME.shop_rules = nil
-    end
-    return toggle_shop_ref(e)
 end
 
 SMODS.Tag:take_ownership('tag_coupon', {

@@ -1,4 +1,4 @@
-# Balatro Rebalanced - v1.0.0 
+# Balatro Rebalanced - v0.2.0 
 
 **This file lists all the differences between the Balatro Rebalanced Mod and Vanilla Balatro**
 
@@ -304,6 +304,10 @@ Flush House :
 Flush Five : 
 - Old : +3 Mult +50 Chips
 - New : +4 Mult +60 Chips
+
+## Skipping 
+
+You can no longer skip Blinds. The Skip option now only appears after the Cash out screen, and only skips the Shop.
 
 ## Tags
 

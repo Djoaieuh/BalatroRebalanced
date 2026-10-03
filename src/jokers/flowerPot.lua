@@ -145,7 +145,6 @@ if SMODS.diamond_pot_hook_installed then
     sendWarnMessage("Diamonds Flower Pot hook already installed - skipping duplicate. Look for a second copy of this code.", "FlowerPot")
 else
     SMODS.diamond_pot_hook_installed = true
-    sendInfoMessage("Diamonds Flower Pot hook installed", "FlowerPot")
 
     -- keeps the edition popup/sound on the chained edition proc
     local calculate_effect_ref = SMODS.calculate_effect

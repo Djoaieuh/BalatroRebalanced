@@ -1,10 +1,10 @@
 # Balatro Rebalanced
 
-An attempt at rebalancing Balatro. Giving some love to unpopular Jokers, Consumables, and Vouchers, and relieving some frustration points around certain Decks and Stakes.
+Giving some love to unpopular Jokers, Consumables, Vouchers, and Mechanics while relieving some frustration points around certain Decks and Stakes.
 
 ## Overview
 
-This mod rebalances a wide range of Jokers, Consumables, Vouchers, Decks, Stakes, and poker hands. The focus is on buffing underused or underwhelming content (like **Loyalty Card**, **Ouija**, and **Magic Trick**) rather than nerfing the game into the ground, while also smoothing out a few notoriously frustrating mechanics (like **Black Deck** and **Blue Seal**).
+This mod rebalances a wide range of Jokers, Consumables, Vouchers, Decks, Stakes, and poker hands. The focus is on buffing underused or underwhelming content (like **Loyalty Card**, **Ouija**, and **Magic Trick**) rather than nerfing the game into the ground, while also smoothing out a few notoriously frustrating mechanics (like **Black Deck** and **Blue Seal**). The Skipping mechanic has also been revamped as a whole, on top of changes made to many of the Skip Tags. 
 
 If you've ever picked up a Joker and thought "why would anyone ever use this," this mod is probably for you.
 
