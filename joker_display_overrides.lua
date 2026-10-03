@@ -412,6 +412,52 @@ jd_def["j_flower_pot_spades"] = { text = {}, reminder_text = {} }
 jd_def["j_flower_pot_diamonds"] = { text = {}, reminder_text = {} }
 --#endregion
 
+--#region Bootstraps (j_bootstraps)
+-- Bootstraps is now a flat accumulator. The vanilla display computes
+-- mult from current dollars, which no longer applies. The accumulated
+-- mult lives at card.ability.bs_mult (top level, not inside extra), and
+-- the money threshold to beat lives at card.ability.bs_last (false
+-- until the first blind is selected). The threshold goes in
+-- reminder_text, in the same ($N) style as the card description.
+-- calc_function coerces both to numbers since bs_last starts as false.
+jd_def["j_bootstraps"] = {
+    text = {
+        { text = "+" },
+        { ref_table = "card.joker_display_values", ref_value = "mult" }
+    },
+    text_config = { colour = G.C.MULT },
+    reminder_text = {
+        { text = "($" },
+        { ref_table = "card.joker_display_values", ref_value = "last_money" },
+        { text = ")" },
+    },
+    reminder_text_config = { colour = G.C.MONEY },
+    calc_function = function(card)
+        card.joker_display_values.mult = card.ability.bs_mult or 0
+        card.joker_display_values.last_money = card.ability.bs_last or 0
+    end
+}
+--#endregion
+
+--#region Bull (j_bull)
+-- Bull is now a flat accumulator: it gains +extra chips each time you
+-- earn money, stored at card.ability.bull_chips (top level, not in
+-- extra, since vanilla keeps extra as a bare number). The vanilla
+-- display multiplies extra by current dollars, which no longer applies,
+-- so read the stored value directly. bull_chips can be nil on a fresh
+-- card, hence the `or 0`.
+jd_def["j_bull"] = {
+    text = {
+        { text = "+" },
+        { ref_table = "card.joker_display_values", ref_value = "chips" }
+    },
+    text_config = { colour = G.C.CHIPS },
+    calc_function = function(card)
+        card.joker_display_values.chips = card.ability.bull_chips or 0
+    end
+}
+--#endregion
+
 --[[
     Flower Pot — Hearts (j_flower_pot_hearts): deliberately no entry here.
     "Same as Juggler" — Juggler's real vanilla entry is `j_juggler = {}`,

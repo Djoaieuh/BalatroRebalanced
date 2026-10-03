@@ -169,6 +169,14 @@ Card Sharp :
 - Old : "X3 Mult if played poker hand has already been played this round"
 - New : "**X2** Mult if played poker hand has already been played this round"
 
+Bull : 
+- Old : "+2 Chips for each $1 you have"
+- New : "This Joker gains +2 Chips every time you earn money"
+
+Bootstraps : 
+- Old : "+2 Mult for every $5 you have"
+- New : "This Joker gains +4 Mult when a blind is selected with more money than when the previous blind was selected"
+
 ## Vouchers
 
 Hone : 
@@ -296,6 +304,85 @@ Flush House :
 Flush Five : 
 - Old : +3 Mult +50 Chips
 - New : +4 Mult +60 Chips
+
+## Tags
+
+Uncommon Tag : 
+- Old : "Shop has a free Uncommon Joker"
+- New : "Next Shop only offers Uncommon Jokers"
+
+Rare Tag : 
+- Old : "Shop has a free Rare Joker"
+- New : "Next Shop always offers a Rare Joker with a Rental Sticker on every roll"
+
+Foil Tag : 
+- Old : "Next base edition shop Joker is free and becomes Foil"
+- New : "A random Joker and a random card in your deck become Foil"
+
+Holographic Tag : 
+- Old : "Next base edition shop Joker is free and becomes Holographic"
+- New : "A random Joker and a random card in your deck become Holographic"
+
+Polychrome Tag : 
+- Old : "Next base edition shop Joker is free and becomes Polychrome"
+- New : "A random Joker and a random card in your deck become Polychrome"
+
+Boss Tag : 
+- Old : "Rerolls the Boss Blind"
+- New : "Disables the next Boss Blind when selected"
+
+Standard Tag : 
+- Old : "Gives a free Mega Standard Pack"
+- New : "Gives a free Mega Standard Pack. Your Standard Packs now offer an extra option (max 2 times)"
+
+Charm Tag : 
+- Old : "Gives a free Mega Arcana Pack"
+- New : "Gives a free Mega Arcana Pack. Your Arcana Packs now offer an extra option (max 2 times)"
+
+Meteor Tag : 
+- Old : "Gives a free Mega Celestial Pack"
+- New : "Gives a free Mega Celestial Pack. Your Celestial Packs now offer an extra option (max 2 times)"
+
+Buffoon Tag : 
+- Old : "Gives a free Mega Buffoon Pack"
+- New : "Gives a free Mega Buffoon Pack. Your Buffoon Packs now offer an extra option (max 2 times)"
+
+Handy Tag : 
+- Old : "Gives $1 per hand played this run"
+- New : "+2 Hands next round only"
+
+Garbage Tag : 
+- Old : "Gain $1 for each unused discard this run"
+- New : "Gain **$2** for each unused discard this run"
+
+Ethereal Tag :
+- Old : "Gives a free Spectral Pack"
+- New : "Gives a free Mega Spectral Pack"
+
+Coupon Tag : 
+- Old : "Initial cards and booster packs in the next shop are free"
+- New : "Next time you skip, get the reward but proceed to the shop anyway"
+
+D6 Tag : 
+- Old : "Rerolls in next shop start a $0"
+- New : "Shop rerolls are capped at 5$ next shop"
+
+Top-up Tag : 
+- Old : "Create up to 2 Common Jokers"
+- New : "Create up to **3** Common Jokers"
+
+Skip Tag : 
+- Old : "Gives $5 for each blind skipped this run"
+- New : "Gives $10 for each shop skipped this run"
+
+Orbital Tag : 
+- Old : "Upgrade [poker hand] by 3 levels"
+- New : "Upgrade [poker hand] by **5** levels"
+
+Economy Tag : 
+- Old : "Doubles your money"
+- New : "Doubles your next cash out"
+
 
 ## Enhancements 
 

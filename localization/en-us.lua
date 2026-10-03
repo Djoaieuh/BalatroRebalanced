@@ -152,6 +152,24 @@ return {
                     "gain {C:blue}+#1#{} Hands",
                 },
             },
+
+            j_bull = {
+                name = "Bull",
+                text = {
+                    "This Joker gains {C:chips}+#1#{} Chips every",
+                    "time you {C:money}earn money{}",
+                    "{C:inactive}(Currently {C:chips}+#2#{C:inactive} Chips)",
+                },
+            },
+            j_bootstraps = {
+                name = "Bootstraps",
+                text = {
+                    "This Joker gains {C:mult}+#1#{} Mult when a blind is",
+                    "selected with {C:money}more money{} than when the",
+                    "previous blind was selected {C:inactive}(${C:money}#3#{C:inactive})",
+                    "{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)",
+                },
+            },
         },
 
         Stake = {
@@ -313,6 +331,147 @@ return {
                     "{C:attention}Boss Blind{} when selected",
                 },
             },
+
+            tag_d_six = {
+                name = "D6 Tag",
+                text = {
+                    "Shop rerolls are",
+                    "capped at {C:money}$5{} next shop",s
+                },
+            },
+
+            tag_charm = {
+                name = "Charm Tag",
+                text = {
+                    "Gives a free {C:attention}Mega Arcana Pack{}",
+                    "Your {C:attention}Arcana Packs{} now offer",
+                    "an {C:attention}extra option{} {C:inactive}(max 2 times){}",
+                },
+            },
+            tag_meteor = {
+                name = "Meteor Tag",
+                text = {
+                    "Gives a free {C:attention}Mega Celestial Pack{}",
+                    "Your {C:attention}Celestial Packs{} now offer",
+                    "an {C:attention}extra option{} {C:inactive}(max 2 times){}",
+                },
+            },
+            tag_standard = {
+                name = "Standard Tag",
+                text = {
+                    "Gives a free {C:attention}Mega Standard Pack{}",
+                    "Your {C:attention}Standard Packs{} now offer",
+                    "an {C:attention}extra option{} {C:inactive}(max 2 times){}",
+                },
+            },
+            tag_buffoon = {
+                name = "Buffoon Tag",
+                text = {
+                    "Gives a free {C:attention}Mega Buffoon Pack{}",
+                    "Your {C:attention}Buffoon Packs{} now offer",
+                    "an {C:attention}extra option{} {C:inactive}(max 2 times){}",
+                },
+            },
+
+            tag_foil = {
+                name = "Foil Tag",
+                text = {
+                    "A random {C:attention}Joker{} and a random",
+                    "card in your deck become {C:dark_edition}Foil{}",
+                },
+            },
+            tag_holo = {
+                name = "Holographic Tag",
+                text = {
+                    "A random {C:attention}Joker{} and a random",
+                    "card in your deck become {C:dark_edition}Holographic{}",
+                },
+            },
+            tag_polychrome = {
+                name = "Polychrome Tag",
+                text = {
+                    "A random {C:attention}Joker{} and a random",
+                    "card in your deck become {C:dark_edition}Polychrome{}",
+                },
+            },
+
+            tag_top_up = {
+                name = "Top-up Tag",
+                text = {
+                    "Create up to {C:attention}3{} {C:blue}Common{} Jokers",
+                    "{C:inactive}(Must have room){}",
+                },
+            },
+            tag_orbital = {
+                name = "Orbital Tag",
+                text = {
+                    "Upgrade {C:attention}#1#{} by",
+                    "{C:attention}#2#{} levels",
+                },
+            },
+            tag_economy = {
+                name = "Economy Tag",
+                text = {
+                    "Doubles your next",
+                    "{C:attention}cash out{}"
+                },
+            },
+
+            tag_ethereal = {
+                name = "Ethereal Tag",
+                text = {
+                    "Gives a free",
+                    "{C:spectral}Mega Spectral Pack{}",
+                },
+            },
+
+            tag_uncommon = {
+                name = "Uncommon Tag",
+                text = {
+                    "Next shop only offers",
+                    "{C:green}Uncommon{} Jokers",
+                },
+            },
+            tag_rare = {
+                name = "Rare Tag",
+                text = {
+                    "Next shop always offers a",
+                    "{C:red}Rare{} Joker with a {C:attention}Rental{}",
+                    "Sticker on every roll",
+                },
+            },
+            tag_coupon = {
+                name = "Coupon Tag",
+                text = {
+                    "Next time you {C:attention}skip{}, get the reward",
+                    "but proceed to the {C:attention}shop{} anyway",
+                },
+            },
+
+            tag_garbage = {
+                name = "Garbage Tag",
+                text = {
+                    "Gain {C:money}$#1#{} for each unused",
+                    "{C:red}discard{} this run",
+                    "{C:inactive}(Currently {C:money}$#2#{C:inactive})",
+                },
+            },
+            
+            tag_handy = {
+                name = "Handy Tag",
+                text = {
+                    "{C:blue}+2{} Hands",
+                    "next round only",
+                },
+            },
+
+            tag_skip = {
+                name = "Skip Tag",
+                text = {
+                    "Gives {C:money}$#1#{} for each",
+                    "{C:attention}shop{} skipped this run",
+                },
+            },
         },
 
         Other = {
@@ -335,6 +494,7 @@ return {
             k_throwback_left = "1 left!",
             k_throwback_done = "Done!",
             k_csau_most_played = "your most played hand",
+            ph_economy_match = "Match your earnings",
         },
     },
 }

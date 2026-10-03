@@ -2,6 +2,7 @@
 -- After every blind (including the boss), before the shop opens, show a
 -- blind-style panel: "Proceed to Shop" + shop logo, and below it
 -- "or [Tag preview] [Skip Shop]". Skip = get THAT tag, straight back to blind select.
+-- Coupon Tag: if you own one, skipping still gives the tag but also opens the shop.
 -- NOTE: built from memory of vanilla Balatro; verify names against your dump.
 
 -- Tune these to fit your screen
@@ -122,14 +123,40 @@ G.FUNCS.shop_choice_skip = function(e)
   stop_use()
   remove_choice_ui()
 
+  -- find a Coupon Tag you already own BEFORE adding the new tag,
+  -- so a Coupon Tag won't consume itself
+  local coupon
+  for _, t in ipairs(G.GAME.tags) do
+    if t.name == 'Coupon Tag' and not t.triggered then coupon = t; break end
+  end
+
+  -- count the skip first, so Skip Tag includes this one (same order as vanilla)
+  G.GAME.skips = (G.GAME.skips or 0) + 1
+
   local key = G.GAME.shop_skip_tag_key or roll_skip_tag_key()
   G.GAME.shop_skip_tag_key = nil
   add_tag(Tag(key, nil, G.GAME.blind_on_deck))
 
-  -- optional: keep skip-counting jokers (e.g. Throwback) working
-  -- G.GAME.skips = (G.GAME.skips or 0) + 1
+  -- fire immediate tags (Skip Tag, Top-up, Economy...) like vanilla skip_blind does
+  G.E_MANAGER:add_event(Event({
+    trigger = 'immediate',
+    func = function()
+      delay(0.3)
+      for i = 1, #G.GAME.tags do
+        G.GAME.tags[i]:apply_to_run({type = 'immediate'})
+      end
+      return true
+    end
+  }))
 
-  -- same tail as toggle_shop, minus the shop teardown
+  if coupon then
+    coupon.triggered = true
+    coupon:yep('+', G.C.GREEN, function() return true end)
+    G.GAME.shop_choice_made = true
+    G.STATE_COMPLETE = false
+    return
+  end
+
   G.STATE_COMPLETE = false
   G.STATE = G.STATES.BLIND_SELECT
 end

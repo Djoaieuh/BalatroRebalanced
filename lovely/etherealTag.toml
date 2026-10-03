@@ -1,0 +1,12 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+[[patches]]
+[patches.pattern]
+target = "tag.lua"
+pattern = "local key = 'p_spectral_normal_1'"
+position = "at"
+payload = "local key = 'p_spectral_mega_1'"
+match_indent = true

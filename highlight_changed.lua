@@ -76,6 +76,8 @@ MyMod.change_type = {
     j_campfire = 'reworked',
     j_matador = 'reworked',
     j_card_sharp = 'nerfed',
+    j_bull = 'reworked',
+    j_bootstraps = 'reworked',
 
     c_pluto = 'nerfed',
     c_mercury = 'nerfed',

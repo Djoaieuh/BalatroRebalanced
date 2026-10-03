@@ -746,7 +746,7 @@ SMODS.Joker:take_ownership('onyx_agate',{
     end,
 },true)
 
-SMODS.Joker:take_ownership('marble',{
+SMODS.Joker:take_ownership('marble', {
     key = "marble",
     blueprint_compat = false,
     rarity = 2,
@@ -767,33 +767,34 @@ SMODS.Joker:take_ownership('marble',{
     },
 
     calculate = function(self, card, context)
-    if context.before and context.full_hand  and G.GAME.current_round.hands_played == 0 then
-        local hand = context.full_hand
+        if context.before and context.full_hand and G.GAME.current_round.hands_played == 0 then
+            -- Snapshot each card's base rank once. get_id() returns a random
+            -- value for Stone Cards, which breaks table.sort's consistency
+            -- requirement ("invalid order function for sorting").
+            local entries = {}
+            for i, c in ipairs(context.full_hand) do
+                if not SMODS.has_enhancement(c, 'm_stone') then
+                    entries[#entries + 1] = { card = c, rank = c.base.id, idx = i }
+                end
+            end
 
-        local sorted = {}
-        for _, c in ipairs(hand) do
-            table.insert(sorted, c)
+            if #entries == 0 then return end
+
+            table.sort(entries, function(a, b)
+                if a.rank ~= b.rank then return a.rank < b.rank end
+                return a.idx < b.idx -- stable tie-break
+            end)
+
+            for i = 1, math.min(2, #entries) do
+                entries[i].card:set_ability(G.P_CENTERS.m_stone)
+            end
+
+            return {
+                message = "Stone!"
+            }
         end
-
-        table.sort(sorted, function(a, b)
-            return a:get_id() < b:get_id()
-        end)
-
-        for i = 1, math.min(2, #sorted) do
-            sorted[i]:set_ability(G.P_CENTERS.m_stone)
-        end
-
-        return {
-            message = "Stone!"
-        }
-    end
-
-    if context.setting_blind then
-
-    end
-end
-
-} , true)
+    end,
+}, true)
 
 SMODS.Joker:take_ownership('j_loyalty_card', {
     config = {
@@ -1350,6 +1351,63 @@ SMODS.Joker:take_ownership('matador', {
     end,
 }, true) 
 
+-- BULL: +2 chips every time you earn money. Vanilla `extra` stays a number so vanilla code can't crash.
+SMODS.Joker:take_ownership('bull', {
+    config = { extra = 2, bull_chips = 0 },
+    loc_vars = function(self, info_queue, card)
+        return { vars = { card.ability.extra, card.ability.bull_chips or 0 } }
+    end,
+    calculate = function(self, card, context)
+        if context.joker_main and (card.ability.bull_chips or 0) > 0 then
+            return { chips = card.ability.bull_chips }
+        end
+    end,
+}, true)
+
+local ease_dollars_ref = ease_dollars
+function ease_dollars(mod, instant)
+    if mod and mod > 0 and G.jokers then
+        for _, joker in ipairs(G.jokers.cards) do
+            if joker.config.center.key == 'j_bull' then
+                joker.ability.bull_chips = (joker.ability.bull_chips or 0) + joker.ability.extra
+                card_eval_status_text(joker, 'extra', nil, nil, nil, {
+                    message = localize{type = 'variable', key = 'a_chips', vars = {joker.ability.extra}},
+                    colour = G.C.CHIPS,
+                })
+            end
+        end
+    end
+    return ease_dollars_ref(mod, instant)
+end
+
+-- BOOTSTRAPS: vanilla `extra.dollars` / `extra.mult` kept (so vanilla code is safe); new state in separate fields
+SMODS.Joker:take_ownership('bootstraps', {
+    config = { extra = { dollars = 1, mult = 4 }, bs_mult = 0, bs_last = false },
+    loc_vars = function(self, info_queue, card)
+        return { vars = {
+            card.ability.extra.mult,
+            card.ability.bs_mult or 0,
+            card.ability.bs_last or 0,
+        } }
+    end,
+    calculate = function(self, card, context)
+        if context.setting_blind and not context.blueprint then
+            local now = G.GAME.dollars
+            local last = card.ability.bs_last
+            card.ability.bs_last = now   -- always the new target, even if lower
+            if last and now > last then
+                card.ability.bs_mult = (card.ability.bs_mult or 0) + card.ability.extra.mult
+                return {
+                    message = localize{type = 'variable', key = 'a_mult', vars = {card.ability.extra.mult}},
+                    colour = G.C.MULT,
+                }
+            end
+        end
+        if context.joker_main and (card.ability.bs_mult or 0) > 0 then
+            return { mult = card.ability.bs_mult }
+        end
+    end,
+}, true)
 
 --#endregion
 
@@ -1401,11 +1459,14 @@ function calculate_reroll_cost(skip_increment)
     end
 end
 
--- Clear the cap when leaving the shop, so it only lasts for that one shop
+-- Single toggle_shop hook: clears BOTH the D6 reroll cap and the shop rule when leaving the shop
 local toggle_shop_ref = G.FUNCS.toggle_shop
 G.FUNCS.toggle_shop = function(e)
-    if G.GAME and G.GAME.round_resets then
-        G.GAME.round_resets.temp_reroll_cap = nil
+    if G.GAME then
+        if G.GAME.round_resets then
+            G.GAME.round_resets.temp_reroll_cap = nil
+        end
+        G.GAME.shop_rules = nil
     end
     return toggle_shop_ref(e)
 end
@@ -1604,6 +1665,10 @@ SMODS.Back:take_ownership ('black',{config = { hands = 0, joker_slot = 1 },} , t
 
 --#region Skip Tags
 
+function create_UIBox_blind_tag(blind_choice, run_info)
+    return nil
+end
+
 SMODS.Tag:take_ownership('boss', {
     in_pool = function(self, args)
         if G.GAME and G.GAME.tags then
@@ -1614,6 +1679,309 @@ SMODS.Tag:take_ownership('boss', {
         return true
     end,
 }, true)
+
+local MAX_PACK_UPGRADES = 2
+
+PACK_UPGRADE_TAGS = {
+    ['Charm Tag']    = { kind = 'Arcana',    key = 'tag_charm'    },
+    ['Meteor Tag']   = { kind = 'Celestial', key = 'tag_meteor'   },
+    ['Standard Tag'] = { kind = 'Standard',  key = 'tag_standard' },
+    ['Buffoon Tag']  = { kind = 'Buffoon',   key = 'tag_buffoon'  },
+}
+
+function apply_pack_upgrade(tag_name)
+    local def = PACK_UPGRADE_TAGS[tag_name]
+    if not def then return end
+
+    G.GAME.pack_upgrades = G.GAME.pack_upgrades or {}
+    G.GAME.banned_keys = G.GAME.banned_keys or {}
+
+    local count = G.GAME.pack_upgrades[def.kind] or 0
+    if count >= MAX_PACK_UPGRADES then return end
+
+    count = count + 1
+    G.GAME.pack_upgrades[def.kind] = count
+
+    if count >= MAX_PACK_UPGRADES then
+        G.GAME.banned_keys[def.key] = true
+    end
+
+    -- Update packs already in the shop
+    if G.shop_booster and G.shop_booster.cards then
+        for _, card in ipairs(G.shop_booster.cards) do
+            refresh_pack_size(card)
+        end
+    end
+end
+
+-- Recompute a pack's option count from its base value + current upgrades.
+-- Idempotent: it always starts from the base value, so it can run any number of times.
+local function refresh_pack_size(card)
+    if not (card and card.ability and card.ability.set == 'Booster') then return end
+    local center = card.config and card.config.center
+    local base = center and center.config and center.config.extra
+    if not base then return end
+
+    local bonus = G.GAME and G.GAME.pack_upgrades and G.GAME.pack_upgrades[center.kind] or 0
+    card.ability.extra = base + bonus
+end
+
+-- Every new pack (shop, tags, etc.) gets the bonus the moment it is created
+local set_ability_ref = Card.set_ability
+function Card:set_ability(center, initial, delay_sprites)
+    set_ability_ref(self, center, initial, delay_sprites)
+    refresh_pack_size(self)
+end
+
+-- Safety net: refresh right before the pack opens, so the count actually shown matches the description
+local open_ref = Card.open
+function Card:open()
+    refresh_pack_size(self)
+    return open_ref(self)
+end
+
+local function pick_without_edition(cards, seed)
+    local pool = {}
+    for _, card in ipairs(cards or {}) do
+        if not card.edition and not card.temp_edition then
+            pool[#pool + 1] = card
+        end
+    end
+    if #pool == 0 then return nil end
+    return pseudorandom_element(pool, pseudoseed(seed))
+end
+
+local function make_edition_tag_apply(edition)
+    return function(self, tag, context)
+        if context.type ~= 'immediate' then return end
+
+        local lock = tag.ID
+        G.CONTROLLER.locks[lock] = true
+
+        tag:yep('+', G.C.DARK_EDITION, function()
+            local joker = G.jokers and pick_without_edition(G.jokers.cards, 'edition_tag_joker')
+            local playing = pick_without_edition(G.playing_cards, 'edition_tag_deck')
+
+            if joker then
+                joker:set_edition({ [edition] = true }, true)
+                joker:juice_up(0.3, 0.5)
+            end
+            if playing then
+                playing:set_edition({ [edition] = true }, true)
+            end
+
+            G.CONTROLLER.locks[lock] = nil
+            return true
+        end)
+
+        tag.triggered = true
+        return true
+    end
+end
+
+local function ante_in_range(min_ante, max_ante)
+    return function(self, args)
+        local ante = G.GAME and G.GAME.round_resets and G.GAME.round_resets.ante or 1
+        if ante < min_ante then return false end
+        if max_ante and ante > max_ante then return false end
+        return true
+    end
+end
+
+SMODS.Tag:take_ownership('tag_foil', {
+    config = { type = 'immediate', edition = 'foil' },
+    apply = make_edition_tag_apply('foil'),
+    in_pool = ante_in_range(1, 2),
+}, true)
+
+SMODS.Tag:take_ownership('tag_holo', {
+    config = { type = 'immediate', edition = 'holo' },
+    apply = make_edition_tag_apply('holo'),
+    in_pool = ante_in_range(3, 4),
+}, true)
+
+SMODS.Tag:take_ownership('tag_polychrome', {
+    config = { type = 'immediate', edition = 'polychrome' },
+    apply = make_edition_tag_apply('polychrome'),
+    in_pool = ante_in_range(5, nil), -- Ante 5 and beyond, no upper limit
+}, true)
+
+-- Top-up Tag: 3 Common Jokers instead of 2
+SMODS.Tag:take_ownership('tag_top_up', {
+    config = { type = 'immediate', spawn_jokers = 3 },
+}, true)
+
+SMODS.Tag:take_ownership('tag_orbital', {}, true)
+G.P_TAGS['tag_orbital'].config.levels = 5
+
+local set_ability_tag_ref = Tag.set_ability
+function Tag:set_ability()
+    if self.name == 'Orbital Tag' and G.GAME and G.GAME.round_resets then
+        local ante = G.GAME.round_resets.ante
+        G.GAME.orbital_choices = G.GAME.orbital_choices or {}
+        G.GAME.orbital_choices[ante] = G.GAME.orbital_choices[ante] or {}
+    end
+
+    set_ability_tag_ref(self)
+
+    if self.name == 'Orbital Tag' and not self.ability.orbital_hand then
+        local hands = {}
+        for k, v in pairs(G.GAME.hands) do
+            if v.visible then hands[#hands + 1] = k end
+        end
+        self.ability.orbital_hand = pseudorandom_element(hands, pseudoseed('orbital_fallback'))
+    end
+end
+
+-- Economy Tag: becomes a cash out tag (like Investment Tag). The row is added by the lovely patch.
+SMODS.Tag:take_ownership('tag_economy', {
+    config = { type = 'eval' },
+}, true)
+
+-- Called by the lovely patch for each Economy Tag during cash out
+function economy_tag_trigger(tag, base)
+    tag:yep('+', G.C.MONEY, function() return true end)
+    tag.triggered = true
+    return {
+        dollars = base,
+        condition = localize('ph_economy_match'),
+        pos = tag.pos,
+        tag = tag,
+    }
+end
+
+SMODS.Tag:take_ownership('tag_ethereal', {
+    loc_vars = function(self, info_queue, tag)
+        info_queue[#info_queue + 1] = G.P_CENTERS.p_spectral_mega_1
+        return { vars = {} }
+    end,
+}, true)
+
+-- Per-shop rule: only ONE of Rare/Uncommon applies per shop; other tags wait for a later shop.
+local function shop_rules()
+    G.GAME.shop_rules = G.GAME.shop_rules or { mode = nil, rare_pending = false }
+    return G.GAME.shop_rules
+end
+
+local function make_shop_rule_apply(mode, colour)
+    return function(self, tag, context)
+        if context.type ~= 'shop_start' then return end
+
+        local rules = shop_rules()
+        if rules.mode then return end   -- shop already claimed: this tag waits (stays untriggered)
+
+        -- claim immediately so a second tag in the same pass can't also fire
+        rules.mode = mode
+        rules.rare_pending = (mode == 'rare')
+
+        tag:yep('+', colour, function() return true end)
+        tag.triggered = true
+        return true
+    end
+end
+
+SMODS.Tag:take_ownership('tag_uncommon', {
+    apply = make_shop_rule_apply('uncommon', G.C.GREEN),
+}, true)
+G.P_TAGS['tag_uncommon'].config.type = 'shop_start'
+
+SMODS.Tag:take_ownership('tag_rare', {
+    apply = make_shop_rule_apply('rare', G.C.RED),
+}, true)
+G.P_TAGS['tag_rare'].config.type = 'shop_start'
+
+-- RARE: the first Joker slot of every roll (opening + each reroll) skips the type roll
+-- and is always a Rare Joker with a Rental sticker
+local create_card_for_shop_ref = create_card_for_shop
+function create_card_for_shop(area)
+    local rules = G.GAME and G.GAME.shop_rules
+    if rules and rules.mode == 'rare' and rules.rare_pending and area == G.shop_jokers then
+        rules.rare_pending = false   -- only the first slot of this roll
+
+        local card = SMODS.create_card({
+            set = 'Joker', area = area, rarity = 1, key_append = 'rta',
+        })
+        if card.set_rental then card:set_rental(true) end
+        create_shop_card_ui(card, 'Joker', area)
+
+        -- let other tags (Foil, Negative...) still modify it, like vanilla does
+        G.E_MANAGER:add_event(Event({
+            func = function()
+                for _, v in ipairs(G.GAME.tags) do
+                    if v:apply_to_run({type = 'store_joker_modify', card = card}) then break end
+                end
+                return true
+            end
+        }))
+        return card
+    end
+    return create_card_for_shop_ref(area)
+end
+
+-- Re-arm the Rare slot on every reroll
+local reroll_shop_ref = G.FUNCS.reroll_shop
+G.FUNCS.reroll_shop = function(e)
+    local rules = G.GAME and G.GAME.shop_rules
+    if rules and rules.mode == 'rare' then
+        rules.rare_pending = true
+    end
+    return reroll_shop_ref(e)
+end
+
+-- UNCOMMON: every Joker created for the shop is Uncommon
+local create_card_ref = SMODS.create_card
+function SMODS.create_card(t)
+    local rules = G.GAME and G.GAME.shop_rules
+    if rules and rules.mode == 'uncommon' and t and t.set == 'Joker' and t.area == G.shop_jokers then
+        t.rarity = 0.9
+    end
+    return create_card_ref(t)
+end
+
+-- Single toggle_shop hook: clears BOTH the D6 reroll cap and the shop rule when leaving the shop
+local toggle_shop_ref = G.FUNCS.toggle_shop
+G.FUNCS.toggle_shop = function(e)
+    if G.GAME then
+        if G.GAME.round_resets then
+            G.GAME.round_resets.temp_reroll_cap = nil
+        end
+        G.GAME.shop_rules = nil
+    end
+    return toggle_shop_ref(e)
+end
+
+SMODS.Tag:take_ownership('tag_coupon', {
+    apply = function(self, tag, context) end,
+}, true)
+G.P_TAGS['tag_coupon'].config.type = 'coupon_skip'  -- context that never fires
+
+-- Garbage Tag: $2 per unused discard instead of $1
+SMODS.Tag:take_ownership('tag_garbage', {
+    loc_vars = function(self, info_queue, tag)
+        local per = (tag and tag.config and tag.config.dollars_per_discard)
+            or G.P_TAGS['tag_garbage'].config.dollars_per_discard
+            or 2
+        local unused = (G.GAME and G.GAME.unused_discards) or 0
+        return { vars = { per, unused * per } }
+    end,
+}, true)
+G.P_TAGS['tag_garbage'].config.dollars_per_discard = 2
+
+-- Handy Tag: +2 hands next round only (fires at the start of the next round, like Juggle Tag)
+SMODS.Tag:take_ownership('tag_handy', {
+    apply = function(self, tag, context)
+        if context.type ~= 'round_start_bonus' then return end
+        tag:yep('+', G.C.BLUE, function() return true end)
+        ease_hands_played(2)   -- hands_left resets every round, so this lasts one round only
+        tag.triggered = true
+        return true
+    end,
+}, true)
+G.P_TAGS['tag_handy'].config.type = 'round_start_bonus'
+
+-- Skip Tag: $10 per shop skipped (config only)
+SMODS.Tag:take_ownership('tag_skip', {}, true)
+G.P_TAGS['tag_skip'].config.skip_bonus = 10
 
 --#endregion
 

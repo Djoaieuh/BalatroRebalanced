@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0]
+
+### Changed
+
+- Reworked skipping mechanic entirely
+- Reworked several skip tags. Check PATCHNOTES.md to see changes
+- Bull and Bootstraps effect has been reworked. Check PATCHNOTES.md to see changes
+
+### Fixed 
+
+- Marble Joker crashing the game when played with Stone Cards
+
 ## [0.1.1]
 
 ### Added 
