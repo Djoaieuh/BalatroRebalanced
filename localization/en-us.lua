@@ -53,7 +53,18 @@ return {
                 text = {
                     "Gives {C:red}+#1# discard{}",
                     "and {C:attention}#2#{} Consumable slot"
-                }
+                },
+                unlock = {
+                    "Skip {C:attention}6{} shops",
+                    "in a single run",
+                },
+            },
+
+            j_wee = {
+                unlock = {
+                    "Skip {C:attention}9{} shops",
+                    "in a single run",
+                },
             },
 
             j_steel_joker = {
@@ -61,7 +72,8 @@ return {
                 text = {
                     "Whenever you {C:red}discard{},",
                     "you will always draw at least",
-                    "1 {C:attention}Steel Card{}"
+                    "1 {C:attention}Steel Card{}",
+                    "{C:inactive}(if any are left in the deck){}"
                 }
             },
 
@@ -241,9 +253,8 @@ return {
             v_planet_merchant = {
                 name = 'Planet Merchant',
                 text = {
-                    "Whenever you use a {C:planet}Planet{} card",
-                    "in the {C:attention}Shop{},",
-                    "reduce the reroll cost by {C:money}$2{}"
+                    'Whenever you buy a {C:planet}Planet{} card,',
+                    'automatically {C:attention}refill{} the {C:attention}Shop{}',
                 }
             },
 

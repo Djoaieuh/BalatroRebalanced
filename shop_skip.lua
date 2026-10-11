@@ -130,6 +130,7 @@ G.FUNCS.shop_choice_skip = function(e)
 
   -- count the skip first so Skip Tag includes this one
   G.GAME.skips = (G.GAME.skips or 0) + 1
+  check_for_unlock({ type = 'shop_skips' })
 
   local key = G.GAME.shop_skip_tag_key or roll_skip_tag_key()
   G.GAME.shop_skip_tag_key = nil

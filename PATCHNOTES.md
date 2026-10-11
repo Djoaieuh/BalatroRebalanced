@@ -201,7 +201,7 @@ Illusion :
 
 Planet Merchant : 
 - Old : "Planet cards appear 2X more frequently in the shop"
-- New : "Whenever you use a Planet card in the Shop, reduce the reroll cost by $2"
+- New : "Whenever you buy a Planet card, automatically refill the Shop"
 
 Planet Tycoon : 
 - Old : "Planet cards appear 4X more frequently in the shop"

@@ -15,9 +15,11 @@
 - Skip Tag now displays how much money it's going to give
 - Flash Card now gains +3 Mult instead of +2
 - Planet Merchant and Planet Tycoon's effects were swapped
-- Planet Merchant now reduces the cost of rerolling by $2 instead of $1
+- Planet Merchant now refills the shop whenever you buy a Planet card
 - Splash now retriggers cards that wouldn't have scored in the original hand
 - Hex now makes your right-most Joker Perishable instead of Eternal
+- Steel Joker description now clarifies you need to have a Steel card in deck to draw one
+- Changed Merry Andy and Wee Joker unlock conditions to require skipping the shop instead
 
 ## [0.2.0]
 

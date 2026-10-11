@@ -1117,7 +1117,21 @@ SMODS.Joker:take_ownership('merry_andy', {
 
         G.consumeables.config.card_limit =
             G.consumeables.config.card_limit - card.ability.extra.c_size
-    end
+    end,
+
+    -- Unlock: skip 6 shops in a single run
+    unlock_condition = { type = 'shop_skips', extra = 6 },
+    check_for_unlock = function(self, args)
+        return args.type == 'shop_skips' and (G.GAME.skips or 0) >= 6
+    end,
+}, true)
+
+-- Wee Joker unlock: skip 9 shops in a single run
+SMODS.Joker:take_ownership('wee', {
+    unlock_condition = { type = 'shop_skips', extra = 9 },
+    check_for_unlock = function(self, args)
+        return args.type == 'shop_skips' and (G.GAME.skips or 0) >= 9
+    end,
 }, true)
 
 SMODS.Joker:take_ownership('steel_joker', {
@@ -1599,6 +1613,30 @@ SMODS.Voucher:take_ownership('illusion', {
         end
     end,
 
+}, true)
+
+-- Planet Merchant: buying a Planet card from the shop refills ALL empty shop slots
+SMODS.Voucher:take_ownership('planet_merchant', {
+    calculate = function(self, card, context)
+        if context.buying_card and context.card
+            and context.card.ability.set == 'Planet'
+            and G.shop_jokers
+        then
+            -- short delay so the bought card has left its slot
+            G.E_MANAGER:add_event(Event({
+                trigger = 'after',
+                delay = 0.3,
+                func = function()
+                    if G.shop_jokers and G.shop_jokers.cards then
+                        for i = 1, G.shop_jokers.config.card_limit - #G.shop_jokers.cards do
+                            G.shop_jokers:emplace(create_card_for_shop(G.shop_jokers))
+                        end
+                    end
+                    return true
+                end
+            }))
+        end
+    end,
 }, true)
 
 --#endregion
