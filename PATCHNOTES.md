@@ -50,7 +50,7 @@ Four Fingers :
 
 8 Ball :
 - Old : "1 in 4 chance for each played 8 to create a Tarot card when scored"
-- New : "**1 in 2** chance for each played 8 to create a Tarot card when scored"
+- New : "**1 in 3** chance for each played 8 to create a Tarot card when scored"
 
 Runner : 
 - Old : "Gains +15 Chips if played hand contains a Straight"
@@ -179,7 +179,7 @@ Flash Card :
 
 Splash : 
 - Old : "Every played card counts in scoring"
-- Mew : "Every played card counts in scoring. Cards that wouldn't have scored in the original hand trigger an extra time"
+- New : "Every played card counts in scoring. Cards that wouldn't have scored in the original hand trigger an extra time"
 
 ## Vouchers
 
@@ -201,7 +201,7 @@ Illusion :
 
 Planet Merchant : 
 - Old : "Planet cards appear 2X more frequently in the shop"
-- New : "Whenever you buy a Planet card, automatically refill the Shop"
+- New : "Whenever you buy a Planet card, automatically refill its Shop slot"
 
 Planet Tycoon : 
 - Old : "Planet cards appear 4X more frequently in the shop"
@@ -223,7 +223,7 @@ Immolate :
 
 Wraith : 
 - Old : "Creates a random Rare Joker, sets money to $0"
-- New : "Creates a random Rare Joker, sets money to **$10**"
+- New : "Creates a random Rare Joker, sets money to **$5**"
 
 Sigil : 
 - Old : "Converts all cards in hand to a single random suit"
@@ -239,7 +239,7 @@ Familiar :
 
 Grim : 
 - Old : "Destroy 1 random card in your hand, add 2 random Enhanced Aces to your hand"
-- New : "Add a random Enhanced Ace to your hand and create 2 random Negative Tarot cards"
+- New : "Add 2 random Enhanced Aces to your hand and create a random Negative Tarot card"
 
 Black Hole :
 - Old : "Upgrade every poker hand by 1 level"

@@ -15,11 +15,19 @@
 - Skip Tag now displays how much money it's going to give
 - Flash Card now gains +3 Mult instead of +2
 - Planet Merchant and Planet Tycoon's effects were swapped
-- Planet Merchant now refills the shop whenever you buy a Planet card
+- Planet Merchant now refills a shop slot whenever you buy a Planet card
 - Splash now retriggers cards that wouldn't have scored in the original hand
 - Hex now makes your right-most Joker Perishable instead of Eternal
 - Steel Joker description now clarifies you need to have a Steel card in deck to draw one
 - Changed Merry Andy and Wee Joker unlock conditions to require skipping the shop instead
+- Grim now adds 2 Aces and creates 1 random Negative Tarot card
+- Wraith now sets your money to 5 instead of 10
+- 8 Ball now has a 1 in 3 chance instead of 1 in 2 
+
+### Fixed
+
+- Fixed a bug where resuming the game on the skip selection screen would cause a softlock
+- Fixed a bug where opening a Booster Pack with an active Booster Pack tag would crash the game
 
 ## [0.2.0]
 

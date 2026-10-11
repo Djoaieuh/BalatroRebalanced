@@ -84,6 +84,15 @@ function Game:update_shop(dt)
     -- don't ask again in that case
     if not G.GAME.shop_choice_made and not G.load_shop_jokers then
       G.STATE_COMPLETE = true -- stops vanilla from building the shop
+
+      -- A panel left over from a previous run (restarting or quitting to the menu
+      -- while it was open) would still be referenced here and stop the new one
+      -- from ever appearing. Nothing can legitimately own it at this point.
+      if G.shop_choice then
+        pcall(function() G.shop_choice:remove() end)
+        G.shop_choice = nil
+      end
+
       G.GAME.shop_skip_tag_key = G.GAME.shop_skip_tag_key or roll_skip_tag_key()
 
       -- delayed so a fast double-click on Cash Out can't hit "Proceed to Shop"

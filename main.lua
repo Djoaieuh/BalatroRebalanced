@@ -60,7 +60,7 @@ SMODS.PokerHand:take_ownership('Flush Five', { l_mult = 4, l_chips = 60 }, true)
 
 SMODS.Consumable:take_ownership('immolate', {config = {remove_card = true, extra = {destroy = 4, dollars = 10}}}, true)
 
-local WRAITH_MONEY = 10
+local WRAITH_MONEY = 5
 
 SMODS.Consumable:take_ownership('wraith', {
     loc_txt = {
@@ -239,7 +239,16 @@ SMODS.Consumable:take_ownership('hex', {
             func = function()
                 local eligible_card = editionless_jokers[#editionless_jokers]
                 eligible_card:set_edition("e_polychrome")
-                eligible_card.ability.perishable = true
+
+                -- Eternal and Perishable can't coexist, so Hex swaps one for the other
+                eligible_card.ability.eternal = false
+
+                -- the sticker needs its countdown set up too, otherwise calculate_perishable
+                -- compares nil at end of round and crashes
+                if not eligible_card.ability.perishable then
+                    eligible_card.ability.perishable = true
+                    eligible_card.ability.perish_tally = G.GAME.perishable_rounds
+                end
 
                 card:juice_up(0.3, 0.5)
                 return true
@@ -350,9 +359,9 @@ SMODS.Consumable:take_ownership('incantation', {
 }, true)
 
 SMODS.Consumable:take_ownership('grim',{
-    config = { extra = { tarots = 2 } },
+    config = { extra = { aces = 2, tarots = 1 } },
     loc_vars = function(self, info_queue, card)
-        return { vars = { card.ability.extra.tarots } }
+        return { vars = { card.ability.extra.aces, card.ability.extra.tarots } }
     end,
     use = function(self, card, area, copier)
         G.E_MANAGER:add_event(Event({
@@ -368,15 +377,20 @@ SMODS.Consumable:take_ownership('grim',{
                         cen_pool[#cen_pool + 1] = enhancement_center.key
                     end
                 end
-                local enhancement = SMODS.poll_enhancement { guaranteed = true, options = cen_pool, key = "vremade_grim_card" }
-                local new_card = SMODS.add_card {
-                    set = "Base",
-                    rank = 'Ace',
-                    enhancement = enhancement,
-                    area = G.hand,
-                    key_append = "vremade_grim_card"
-                }
-                SMODS.calculate_context({ playing_card_added = true, cards = { new_card } })
+
+                local new_cards = {}
+                for i = 1, card.ability.extra.aces do
+                    -- each Ace rolls its own enhancement
+                    local enhancement = SMODS.poll_enhancement { guaranteed = true, options = cen_pool, key = "vremade_grim_card" .. i }
+                    new_cards[#new_cards + 1] = SMODS.add_card {
+                        set = "Base",
+                        rank = 'Ace',
+                        enhancement = enhancement,
+                        area = G.hand,
+                        key_append = "vremade_grim_card" .. i
+                    }
+                end
+                SMODS.calculate_context({ playing_card_added = true, cards = new_cards })
                 return true
             end
         }))
@@ -652,7 +666,7 @@ SMODS.Joker:take_ownership('devious', {config = {t_chips = 150, type = 'Straight
 
 SMODS.Joker:take_ownership('four_fingers', {rarity = 1, cost = 5}, true)
 
-SMODS.Joker:take_ownership('8_ball', {config = {extra = 2, }}, true)
+SMODS.Joker:take_ownership('8_ball', {config = {extra = 3, }}, true)
 
 SMODS.Joker:take_ownership('runner', {config = {extra = {chips = 0, chip_mod = 20}}}, true)
 
@@ -1615,7 +1629,7 @@ SMODS.Voucher:take_ownership('illusion', {
 
 }, true)
 
--- Planet Merchant: buying a Planet card from the shop refills ALL empty shop slots
+-- Planet Merchant: buying a Planet card from the shop refills that one empty slot
 SMODS.Voucher:take_ownership('planet_merchant', {
     calculate = function(self, card, context)
         if context.buying_card and context.card
@@ -1627,10 +1641,11 @@ SMODS.Voucher:take_ownership('planet_merchant', {
                 trigger = 'after',
                 delay = 0.3,
                 func = function()
-                    if G.shop_jokers and G.shop_jokers.cards then
-                        for i = 1, G.shop_jokers.config.card_limit - #G.shop_jokers.cards do
-                            G.shop_jokers:emplace(create_card_for_shop(G.shop_jokers))
-                        end
+                    -- add exactly one card, and only if there's actually room
+                    if G.shop_jokers and G.shop_jokers.cards
+                        and #G.shop_jokers.cards < G.shop_jokers.config.card_limit
+                    then
+                        G.shop_jokers:emplace(create_card_for_shop(G.shop_jokers))
                     end
                     return true
                 end
@@ -1760,6 +1775,20 @@ PACK_UPGRADE_TAGS = {
     ['Buffoon Tag']  = { kind = 'Buffoon',   key = 'tag_buffoon'  },
 }
 
+-- Recompute a pack's option count from its base value + current upgrades.
+-- Idempotent: it always starts from the base value, so it can run any number of times.
+-- NOTE: this must stay ABOVE apply_pack_upgrade. A `local function` is only visible
+-- to code written after it, so apply_pack_upgrade used to see it as a nil global.
+local function refresh_pack_size(card)
+    if not (card and card.ability and card.ability.set == 'Booster') then return end
+    local center = card.config and card.config.center
+    local base = center and center.config and center.config.extra
+    if not base then return end
+
+    local bonus = G.GAME and G.GAME.pack_upgrades and G.GAME.pack_upgrades[center.kind] or 0
+    card.ability.extra = base + bonus
+end
+
 function apply_pack_upgrade(tag_name)
     local def = PACK_UPGRADE_TAGS[tag_name]
     if not def then return end
@@ -1783,18 +1812,6 @@ function apply_pack_upgrade(tag_name)
             refresh_pack_size(card)
         end
     end
-end
-
--- Recompute a pack's option count from its base value + current upgrades.
--- Idempotent: it always starts from the base value, so it can run any number of times.
-local function refresh_pack_size(card)
-    if not (card and card.ability and card.ability.set == 'Booster') then return end
-    local center = card.config and card.config.center
-    local base = center and center.config and center.config.extra
-    if not base then return end
-
-    local bonus = G.GAME and G.GAME.pack_upgrades and G.GAME.pack_upgrades[center.kind] or 0
-    card.ability.extra = base + bonus
 end
 
 -- Every new pack (shop, tags, etc.) gets the bonus the moment it is created

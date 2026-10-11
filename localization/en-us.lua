@@ -254,7 +254,7 @@ return {
                 name = 'Planet Merchant',
                 text = {
                     'Whenever you buy a {C:planet}Planet{} card,',
-                    'automatically {C:attention}refill{} the {C:attention}Shop{}',
+                    'automatically {C:attention}refill{} its {C:attention}Shop{} slot',
                 }
             },
 
@@ -293,7 +293,7 @@ return {
                 text = {
                     'Add {C:edition}Polychrome{} to',
                     'your {C:attention}right-most{} Joker and',
-                    'make it {C:dark_edition}Eternal{}.'
+                    'make it {C:blue}Perishable{}.'
                 }
             },
 
@@ -309,9 +309,9 @@ return {
             c_grim = {
                 name = 'Grim',
                 text = {
-                    'Add a random {C:attention}Enhanced Ace{}',
-                    'to your hand and create {C:attention}2{} random',
-                    '{C:dark_edition}Negative{} {C:tarot}Tarot{} cards'
+                    'Add 2 random {C:attention}Enhanced Aces{}',
+                    'to your hand and create a random',
+                    '{C:dark_edition}Negative{} {C:tarot}Tarot{} card'
                 }
             },
 
