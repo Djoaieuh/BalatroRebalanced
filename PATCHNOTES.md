@@ -1,4 +1,4 @@
-# Balatro Rebalanced - v0.2.0 
+# Balatro Rebalanced - v0.2.1 
 
 **This file lists all the differences between the Balatro Rebalanced Mod and Vanilla Balatro**
 
@@ -45,10 +45,6 @@ Devious Joker :
 - New : "**+150** Chips if played hand contains a Straight"
 
 Four Fingers : 
-- Old : Rarity : Uncommon / Price : $7
-- New : Rarity : Common / Price : $5
-
-Shortcut : 
 - Old : Rarity : Uncommon / Price : $7
 - New : Rarity : Common / Price : $5
 
@@ -171,11 +167,19 @@ Card Sharp :
 
 Bull : 
 - Old : "+2 Chips for each $1 you have"
-- New : "This Joker gains +2 Chips every time you earn money"
+- New : "This Joker gains +3 Chips every time you earn money"
 
 Bootstraps : 
 - Old : "+2 Mult for every $5 you have"
-- New : "This Joker gains +4 Mult when a blind is selected with more money than when the previous blind was selected"
+- New : "When selecting a Blind, if you have more money than you did when selecting the previous Blind, gain +4 Mult, otherwise reset to 0 Mult"
+
+Flash Card : 
+- Old : "This Joker gains +2 Mult per reroll in the shop"
+- New : "This Joker gain **+3** Mult per reroll in the shop"
+
+Splash : 
+- Old : "Every played card counts in scoring"
+- Mew : "Every played card counts in scoring. Cards that wouldn't have scored in the original hand trigger an extra time"
 
 ## Vouchers
 
@@ -197,11 +201,11 @@ Illusion :
 
 Planet Merchant : 
 - Old : "Planet cards appear 2X more frequently in the shop"
-- New : "Planet cards now upgrade your poker hands by an extra level"
+- New : "Whenever you use a Planet card in the Shop, reduce the reroll cost by $2"
 
 Planet Tycoon : 
 - Old : "Planet cards appear 4X more frequently in the shop"
-- New : "Whenever you use a Planet card in the Shop, reduce the reroll cost by $1"
+- New : "Planet cards now upgrade your poker hands by an extra level"
 
 ## Consumables
 
@@ -231,7 +235,7 @@ Incantation :
 
 Familiar : 
 - Old : "Destroy 1 random card in your hand, add 3 random Enhanced face cards to your hand"
-- New : "Destroy 2 random cards and convert 3 into random Enhanced face cards"
+- New : "Destroy 2 random cards and convert 2 into random Enhanced face cards"
 
 Grim : 
 - Old : "Destroy 1 random card in your hand, add 2 random Enhanced Aces to your hand"
@@ -247,7 +251,7 @@ Ouija :
 
 Hex : 
 - Old : "Add Polychrome to a random Joker, destroy all other Jokers"
-- New : "Add Polychrome to your right-most Joker and make it Eternal"
+- New : "Add Polychrome to your right-most Joker and make it Perishable"
 
 ## Decks
 
@@ -291,7 +295,7 @@ Four of a Kind :
 
 Straight Flush : 
 - Old : +4 Mult +40 Chips
-- New : +8 Mult +80 Chips
+- New : +5 Mult +60 Chips
 
 Five of a Kind : 
 - Old : +3 Mult +35 Chips

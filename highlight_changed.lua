@@ -50,7 +50,6 @@ MyMod.change_type = {
     j_clever = 'buffed',
     j_devious = 'buffed',
     j_four_fingers = 'buffed',
-    j_shortcut = 'buffed',
     j_8_ball = 'buffed',
     j_runner = 'buffed',
     j_vampire = 'buffed',
@@ -78,6 +77,8 @@ MyMod.change_type = {
     j_card_sharp = 'nerfed',
     j_bull = 'reworked',
     j_bootstraps = 'reworked',
+    j_flash = 'buffed',
+    j_splash = 'buffed',
 
     c_pluto = 'nerfed',
     c_mercury = 'nerfed',
@@ -87,10 +88,10 @@ MyMod.change_type = {
     c_jupiter = 'buffed',
     c_earth = 'buffed',
     c_mars = 'buffed',
-    c_neptune = 'buffed',
     c_planet_x = 'buffed',
     c_ceres = 'buffed',
     c_eris = 'buffed',
+    c_neptune = 'buffed'
 }
 
 MyMod.BADGES = {

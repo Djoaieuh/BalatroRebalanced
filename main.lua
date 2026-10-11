@@ -49,7 +49,7 @@ SMODS.PokerHand:take_ownership('Straight', { l_mult = 4, l_chips = 30 }, true)
 SMODS.PokerHand:take_ownership('Flush', { l_mult = 2, l_chips = 20 }, true)
 SMODS.PokerHand:take_ownership('Full House', { l_mult = 3, l_chips = 30 }, true)
 SMODS.PokerHand:take_ownership('Four of a Kind', { l_mult = 4, l_chips = 40 }, true)
-SMODS.PokerHand:take_ownership('Straight Flush', { l_mult = 8, l_chips = 80 }, true)
+SMODS.PokerHand:take_ownership('Straight Flush', { l_mult = 5, l_chips = 60 }, true)
 SMODS.PokerHand:take_ownership('Five of a Kind', { l_mult = 4, l_chips = 50 }, true)
 SMODS.PokerHand:take_ownership('Flush House', { l_mult = 5, l_chips = 50 }, true)
 SMODS.PokerHand:take_ownership('Flush Five', { l_mult = 4, l_chips = 60 }, true)
@@ -239,7 +239,7 @@ SMODS.Consumable:take_ownership('hex', {
             func = function()
                 local eligible_card = editionless_jokers[#editionless_jokers]
                 eligible_card:set_edition("e_polychrome")
-                eligible_card.ability.eternal = true
+                eligible_card.ability.perishable = true
 
                 card:juice_up(0.3, 0.5)
                 return true
@@ -412,7 +412,7 @@ SMODS.Consumable:take_ownership('grim',{
 
 -- Familiar
 SMODS.Consumable:take_ownership('familiar', {
-    config = { extra = { destroy = 2, cards = 3 } },
+    config = { extra = { destroy = 2, cards = 2 } },
     loc_vars = function(self, info_queue, card)
         return { vars = { card.ability.extra.destroy, card.ability.extra.cards } }
     end,
@@ -652,8 +652,6 @@ SMODS.Joker:take_ownership('devious', {config = {t_chips = 150, type = 'Straight
 
 SMODS.Joker:take_ownership('four_fingers', {rarity = 1, cost = 5}, true)
 
-SMODS.Joker:take_ownership('shortcut', {rarity = 1, cost = 5}, true)
-
 SMODS.Joker:take_ownership('8_ball', {config = {extra = 2, }}, true)
 
 SMODS.Joker:take_ownership('runner', {config = {extra = {chips = 0, chip_mod = 20}}}, true)
@@ -661,6 +659,8 @@ SMODS.Joker:take_ownership('runner', {config = {extra = {chips = 0, chip_mod = 2
 SMODS.Joker:take_ownership('vampire', {config = {extra = 0.2, Xmult = 1}}, true)
 
 SMODS.Joker:take_ownership('mail', {config = {extra = 4}}, true)
+
+SMODS.Joker:take_ownership('flash', {config = {extra = 3, mult = 0}}, true)
 
 SMODS.Joker:take_ownership('fortune_teller', {
     config = { extra = { mult = 2 } },
@@ -802,6 +802,7 @@ SMODS.Joker:take_ownership('j_loyalty_card', {
             ready = false
         }
     },
+    eternal_compat = false,
 
     rarity = 1,
     cost = 4,
@@ -965,30 +966,39 @@ SMODS.Joker:take_ownership('cloud_9', {
     end
 }, true)
 
-SMODS.Joker:take_ownership('erosion',{
+SMODS.Joker:take_ownership('erosion', {
     name = 'erosion',
     config = { extra = { Xmult_gain = 0.25, Xmult = 1 } },
+    in_pool = function(self, args)
+        if G.playing_cards then
+            for _, playing_card in ipairs(G.playing_cards) do
+                if SMODS.has_enhancement(playing_card, 'm_stone') then
+                    return true
+                end
+            end
+        end
+        return false
+    end,
     loc_vars = function(self, info_queue, card)
-        info_queue[#info_queue + 1] = G.P_CENTERS.m_stone 
+        info_queue[#info_queue + 1] = G.P_CENTERS.m_stone
         return { vars = { card.ability.extra.Xmult_gain, card.ability.extra.Xmult } }
     end,
     calculate = function(self, card, context)
         if context.before and not context.blueprint then
             for _, scored_card in ipairs(context.scoring_hand) do
                 if SMODS.has_enhancement(scored_card, 'm_stone') and not scored_card.debuff then
-                scored_card.stone_eaten = true
+                    scored_card.stone_eaten = true
                     SMODS.scale_card(card, {
-                    ref_table = card.ability.extra,
-                    ref_value = "Xmult",
-                    scalar_value = "Xmult_gain",
-                    message_key = 'a_xmult',
+                        ref_table = card.ability.extra,
+                        ref_value = "Xmult",
+                        scalar_value = "Xmult_gain",
+                        message_key = 'a_xmult',
                     })
-                    break 
+                    break
                 end
             end
         end
 
-        
         if context.destroy_card and context.cardarea == G.play
             and context.destroy_card.stone_eaten and not context.blueprint then
             context.destroy_card.stone_eaten = nil
@@ -999,7 +1009,7 @@ SMODS.Joker:take_ownership('erosion',{
             return { xmult = card.ability.extra.Xmult }
         end
     end,
-} , true)
+}, true)
 
 SMODS.Joker:take_ownership('throwback',{
     blueprint_compat = false,
@@ -1133,54 +1143,38 @@ SMODS.Joker:take_ownership('stone', {
     end
 }, true)
 
+local function satellite_most_played()
+    if not (G and G.GAME and G.GAME.hands and G.handlist) then return nil end
+
+    local best, best_played = nil, -1
+    -- G.handlist runs best -> worst hand, and ">=" lets later entries win ties,
+    -- so a fresh run (everything at 0 plays) defaults to High Card
+    for _, name in ipairs(G.handlist) do
+        local data = G.GAME.hands[name]
+        if data and data.visible ~= false and data.played >= best_played then
+            best, best_played = name, data.played
+        end
+    end
+    return best
+end
+
 SMODS.Joker:take_ownership('satellite', {
     blueprint_compat = false,
     config = {
-        extra = 1,
+        extra = 2,   -- $ per hand level
         hand = nil
     },
 
     set_ability = function(self, card, initial, delay_sprites)
-        local hands = {}
-
-        for hand, data in pairs(G.GAME.hands) do
-            if data.visible ~= false then
-                hands[#hands + 1] = hand
-            end
-        end
-
-        if #hands > 0 then
-            card.ability.hand = pseudorandom_element(
-                hands,
-                pseudoseed('satellite')
-            )
-        end
+        card.ability.hand = satellite_most_played()
     end,
 
     loc_vars = function(self, info_queue, card)
-        local display_hand = card.ability.hand
-
-        -- Collection / outside a run:
-        -- choose a random visible hand to display if none has been assigned yet
-        if not display_hand and G.GAME and G.GAME.hands then
-            local hands = {}
-
-            for hand, data in pairs(G.GAME.hands) do
-                if data.visible ~= false then
-                    hands[#hands + 1] = hand
-                end
-            end
-
-            if #hands > 0 then
-                display_hand = pseudorandom_element(
-                    hands,
-                    pseudoseed('satellite_collection')
-                )
-            end
-        end
+        local display_hand = card.ability.hand or satellite_most_played()
 
         return {
             vars = {
+                card.ability.extra,
                 display_hand
                     and localize(display_hand, 'poker_hands')
                     or "???"
@@ -1196,7 +1190,7 @@ SMODS.Joker:take_ownership('satellite', {
         local hand = G.GAME.hands[card.ability.hand]
 
         if hand and hand.level > 0 then
-            return 1 * hand.level
+            return card.ability.extra * hand.level
         end
 
         return nil
@@ -1349,7 +1343,7 @@ SMODS.Joker:take_ownership('matador', {
 
 -- BULL: +2 chips every time you earn money. Vanilla `extra` stays a number so vanilla code can't crash.
 SMODS.Joker:take_ownership('bull', {
-    config = { extra = 2, bull_chips = 0 },
+    config = { extra = 3, bull_chips = 0 },
     loc_vars = function(self, info_queue, card)
         return { vars = { card.ability.extra, card.ability.bull_chips or 0 } }
     end,
@@ -1391,16 +1385,57 @@ SMODS.Joker:take_ownership('bootstraps', {
             local now = G.GAME.dollars
             local last = card.ability.bs_last
             card.ability.bs_last = now   -- always the new target, even if lower
-            if last and now > last then
-                card.ability.bs_mult = (card.ability.bs_mult or 0) + card.ability.extra.mult
-                return {
-                    message = localize{type = 'variable', key = 'a_mult', vars = {card.ability.extra.mult}},
-                    colour = G.C.MULT,
-                }
+
+            if last then
+                if now > last then
+                    -- hit the target: grow
+                    card.ability.bs_mult = (card.ability.bs_mult or 0) + card.ability.extra.mult
+                    return {
+                        message = localize{type = 'variable', key = 'a_mult', vars = {card.ability.extra.mult}},
+                        colour = G.C.MULT,
+                    }
+                elseif (card.ability.bs_mult or 0) > 0 then
+                    -- missed the target (equal or lower): reset
+                    card.ability.bs_mult = 0
+                    return {
+                        message = localize('k_reset'),
+                        colour = G.C.RED,
+                    }
+                end
             end
         end
         if context.joker_main and (card.ability.bs_mult or 0) > 0 then
             return { mult = card.ability.bs_mult }
+        end
+    end,
+}, true)
+
+-- SPLASH: every played card scores; cards that wouldn't have scored naturally trigger an extra time
+SMODS.Joker:take_ownership('splash', {
+    blueprint_compat = false,
+
+    calculate = function(self, card, context)
+        if context.modify_scoring_hand then
+            -- context.scoring_hand is the natural hand here, so a card missing
+            -- from it only scores because of Splash. Set the flag on every call
+            -- (true or false) so a stale flag from the hand preview can't stick.
+            local natural = false
+            for _, c in ipairs(context.scoring_hand) do
+                if c == context.other_card then natural = true; break end
+            end
+            context.other_card.splash_extra = not natural
+            return { add_to_hand = true }
+        end
+
+        if context.repetition and context.cardarea == G.play
+            and context.other_card.splash_extra then
+            return { repetitions = 1 }
+        end
+
+        if context.after and context.full_hand then
+            for _, c in ipairs(context.full_hand) do
+                c.splash_extra = nil
+            end
         end
     end,
 }, true)
@@ -1437,14 +1472,16 @@ function calculate_reroll_cost(skip_increment)
             G.GAME.current_round.reroll_cost + extra_increase
     end
 
-    if G.GAME.planet_tycoon_active then
+        if G.GAME.planet_tycoon_active then
         local discount = G.GAME.planet_tycoon_discount or 0
 
         if discount > 0 then
-            G.GAME.current_round.reroll_cost = math.max(
-                0,
-                G.GAME.current_round.reroll_cost - discount
-            )
+            -- Cap the stored discount at the current cost, so any overflow
+            -- past $0 is thrown away instead of carrying into later rerolls
+            discount = math.min(discount, G.GAME.current_round.reroll_cost)
+            G.GAME.planet_tycoon_discount = discount
+
+            G.GAME.current_round.reroll_cost = G.GAME.current_round.reroll_cost - discount
         end
     end
 
@@ -1963,9 +2000,15 @@ SMODS.Tag:take_ownership('tag_handy', {
 }, true)
 G.P_TAGS['tag_handy'].config.type = 'round_start_bonus'
 
--- Skip Tag: $10 per shop skipped (config only)
-SMODS.Tag:take_ownership('tag_skip', {}, true)
-G.P_TAGS['tag_skip'].config.skip_bonus = 10
+
+SMODS.Tag:take_ownership('tag_skip', {
+    config = { type = 'immediate', skip_bonus = 10 },
+    loc_vars = function(self, info_queue, tag)
+        local bonus = (tag and tag.config or self.config).skip_bonus
+        local skips = (G.GAME and G.GAME.skips) or 0
+        return { vars = { bonus, (skips + 1) * bonus } }
+    end,
+}, true)
 
 --#endregion
 

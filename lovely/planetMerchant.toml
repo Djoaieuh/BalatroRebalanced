@@ -2,10 +2,6 @@
 version = "1.0.0"
 priority = 0
 
-# ============================================================
-# Planet Merchant + Planet Tycoon
-# ============================================================
-
 [[patches]]
 [patches.pattern]
 target = "card.lua"
@@ -16,25 +12,24 @@ position = "at"
 payload = '''if self.ability.consumeable.hand_type then
             level_up_hand(used_tarot, self.ability.consumeable.hand_type)
 
-            -- Planet Merchant
+            -- Planet Tycoon: extra level
             if self.config.center.set == 'Planet'
                 and G.GAME.used_vouchers
-                and G.GAME.used_vouchers.v_planet_merchant
+                and G.GAME.used_vouchers.v_planet_tycoon
             then
                 level_up_hand(used_tarot, self.ability.consumeable.hand_type)
             end
 
-            -- Planet Tycoon
+            -- Planet Merchant: -$2 reroll cost per Planet used in the shop
             if self.config.center.set == 'Planet'
                 and G.GAME.used_vouchers
-                and G.GAME.used_vouchers.v_planet_tycoon
+                and G.GAME.used_vouchers.v_planet_merchant
                 and G.GAME.planet_tycoon_active
             then
                 G.GAME.planet_tycoon_discount =
-                    (G.GAME.planet_tycoon_discount or 0) + 1
+                    (G.GAME.planet_tycoon_discount or 0) + 2
 
                 calculate_reroll_cost(true)
             end
         end'''
 match_indent = true
-

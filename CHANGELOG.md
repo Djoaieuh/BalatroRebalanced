@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.1]
+
+### Changed
+
+- Erosion now only appears when you have at least one Stone Card in the deck
+- Shortcut is now an Uncommon Joker again
+- Neptune now gives +5 Mult / +60 Chips instead of +8 Mult / +80 Chips
+- Bull now gains +3 Chips every time you earn money instead of +2
+- Loyalty card can no longer spawn with an Eternal Sticker
+- Familiar now only converts 2 cards to face cards down from 3
+- Bootstraps now resets if you don't have more money than when selecting the previous blind
+- Satelite now gives 2$ per hand level, and always starts on your most played hand
+- Skip Tag now displays how much money it's going to give
+- Flash Card now gains +3 Mult instead of +2
+- Planet Merchant and Planet Tycoon's effects were swapped
+- Planet Merchant now reduces the cost of rerolling by $2 instead of $1
+- Splash now retriggers cards that wouldn't have scored in the original hand
+- Hex now makes your right-most Joker Perishable instead of Eternal
+
 ## [0.2.0]
 
 ### Changed

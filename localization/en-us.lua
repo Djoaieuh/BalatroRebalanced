@@ -118,9 +118,9 @@ return {
             j_satellite = {
                 name = "Satellite",
                 text = {
-                    "At end of round, gain {C:money}$1{}",
-                    "for each {C:attention}#1#{} level you have",
-                    "After you play a {C:attention}#1#{},",
+                    "At end of round, gain {C:money}$#1#{}",
+                    "for each {C:attention}#2#{} level you have",
+                    "After you play a {C:attention}#2#{},",
                     "this changes hand"
                 }
             },
@@ -164,10 +164,20 @@ return {
             j_bootstraps = {
                 name = "Bootstraps",
                 text = {
-                    "This Joker gains {C:mult}+#1#{} Mult when a blind is",
-                    "selected with {C:money}more money{} than when the",
-                    "previous blind was selected {C:inactive}(${C:money}#3#{C:inactive})",
+                    "When selecting a {C:attention}Blind{}, if you have",
+                    "{C:money}more money{} than you did when selecting",
+                    "the previous {C:attention}Blind{} {C:inactive}(${C:money}#3#{C:inactive})",
+                    "gain {C:mult}+#1#{} Mult, otherwise reset to {C:mult}0{} Mult",
                     "{C:inactive}(Currently {C:mult}+#2#{C:inactive} Mult)",
+                },
+            },
+
+            j_splash = {
+                name = "Splash",
+                text = {
+                    "Every {C:attention}played card{} counts in scoring",
+                    "Cards that wouldn't have scored in the",
+                    "original hand trigger an {C:attention}extra{} time",
                 },
             },
         },
@@ -231,18 +241,18 @@ return {
             v_planet_merchant = {
                 name = 'Planet Merchant',
                 text = {
-                    '{C:planet}Planet{} cards now upgrade',
-                    'your {C:attention}poker hands{} by',
-                    'an {C:attention}extra level{}'
+                    "Whenever you use a {C:planet}Planet{} card",
+                    "in the {C:attention}Shop{},",
+                    "reduce the reroll cost by {C:money}$2{}"
                 }
             },
 
             v_planet_tycoon = {
                 name = "Planet Tycoon",
                 text = {
-                    "Whenever you use a {C:planet}Planet{} card",
-                    "in the {C:attention}Shop{},",
-                    "reduce the reroll cost by {C:money}$1{}"
+                    '{C:planet}Planet{} cards now upgrade',
+                    'your {C:attention}poker hands{} by',
+                    'an {C:attention}extra level{}'
                 },
             },
 
@@ -336,7 +346,7 @@ return {
                 name = "D6 Tag",
                 text = {
                     "Shop rerolls are",
-                    "capped at {C:money}$5{} next shop",s
+                    "capped at {C:money}$5{} next shop",
                 },
             },
 
@@ -470,6 +480,7 @@ return {
                 text = {
                     "Gives {C:money}$#1#{} for each",
                     "{C:attention}shop{} skipped this run",
+                    "{C:inactive}(Currently {C:money}$#2#{C:inactive})",
                 },
             },
         },
