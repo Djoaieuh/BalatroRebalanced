@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.2.2]
+
+### Changed
+
+- Fortune Teller now only counts Tarot cards used after you obtained it
+- Flower Pot now needs 20 cards of the same suit in a row instead of 25
+- Hearts Flower Pot now makes your probability effects (Lucky Cards, Bloodstone, 8 Ball, etc.) trigger 2 extra times instead of giving +4 hand size
+- Clubs Flower Pot now creates a Spectral card after scoring 10 Clubs instead of copying the Joker to its right
+- Diamonds Flower Pot now gives $2 more every time you earn money instead of retriggering Enhancements, Seals and Editions
+- Hiker now gives +7 Chips instead of +5, and the bonus also scores immediately
+- Hologram now gains X0.2 Mult per card added instead of X0.25
+- Juggle Tag now gives +4 hand size, then you lose 1 bonus hand size at the end of each round
+- Uncommon Tag now adds a Rental sticker to the next Uncommon Joker you buy and duplicates it
+- Rare Tag now gives a free Rare Buffoon Pack which contains 3 Rare Jokers
+- Meteor Tag now gives $1 per Planet card used this run 
+- Charm Tag now gives a Mega Arcana Pack with an extra pre-announced Tarot card
+- Buffoon Tag now gives a Mega Buffoon Pack with an extra pre-announced Uncommon or Rare Joker
+- Standard Tag now gives a Mega Standard Pack with an extra card with a pre-announced random Seal
+- Handy Tag now gives +3 hands when you run out of hands without beating the blind
+- Hone now makes Uncommon Jokers X1.5 as likely to appear instead of X2
+- Adjusted several poker hand level-up values:
+  - Full House: +3 Mult / +25 Chips per level 
+  - Four of a Kind: +4 Mult / +30 Chips per level
+  - Straight Flush: +5 Mult / +50 Chips per level 
+  - Five of a Kind: +4 Mult / +40 Chips per level 
+  - Straight and Flush Five are back to their vanilla level-up values
+- Shoot the Moon is now an Uncommon Joker
+- Glass Joker has been reverted to its vanilla effect
+- D6 Tag now makes your first 3 rerolls cost $0
+
+
 ## [0.2.1]
 
 ### Changed

@@ -10,7 +10,7 @@
     Key naming: confirmed — every key below is just "j_" + whatever string
     you passed to take_ownership (e.g. take_ownership('marble', ...) is
     j_marble, NOT j_marble_joker). Fixed a couple I had wrong last round
-    (marble, glass, stone).
+    (marble, stone).
 
     Styling convention (confirmed against JokerDisplay's own source):
     - Use text_config = { colour = X } to colour a whole `text` array
@@ -158,8 +158,8 @@ jd_def["j_matador"] = { text = {}, reminder_text = {} }
 --#endregion
 
 --#region Fortune Teller (j_fortune_teller)
--- Built-in display was stuck on vanilla's +1 Mult per Tarot used, not
--- reading your extra.mult = 2 change. Reading it directly instead.
+-- Only counts Tarot cards used since the Joker was obtained
+-- (total usage minus the baseline stored in add_to_deck in main.lua).
 jd_def["j_fortune_teller"] = {
     text = {
         { text = "+" },
@@ -167,8 +167,9 @@ jd_def["j_fortune_teller"] = {
     },
     text_config = { colour = G.C.MULT },
     calc_function = function(card)
-        card.joker_display_values.mult = card.ability.extra.mult *
-            (G.GAME.consumeable_usage_total and G.GAME.consumeable_usage_total.tarot or 0)
+        local total = (G.GAME.consumeable_usage_total and G.GAME.consumeable_usage_total.tarot) or 0
+        local baseline = card.ability.extra.baseline or total
+        card.joker_display_values.mult = card.ability.extra.mult * math.max(0, total - baseline)
     end
 }
 --#endregion
@@ -200,10 +201,6 @@ jd_def["j_superposition"] = {
         card.joker_display_values.bonus = (is_straight and found_ace) and 1 or 0
     end
 }
---#endregion
-
---#region Glass Joker (j_glass)
-jd_def["j_glass"] = { text = {}, reminder_text = {} }
 --#endregion
 
 --#region Steel Joker (j_steel_joker)
@@ -374,29 +371,22 @@ jd_def["j_flower_pot"] = {
 --#endregion
 
 --#region Flower Pot — Clubs (j_flower_pot_clubs)
--- Copied directly from the real j_blueprint entry — your Clubs pot's
--- calculate() calls SMODS.blueprint_effect the same way vanilla
--- Blueprint does, copying whatever joker sits to its right, so its
--- display should behave identically: green/red compatibility badge plus
--- JokerDisplay.copy_display mirroring the copied joker's own display.
+-- Clubs pot counts scored Clubs toward a Spectral card: shows count/needed,
+-- coloured like the Clubs suit (lightened, raw Clubs black is unreadable).
 jd_def["j_flower_pot_clubs"] = {
-    reminder_text = {
-        { text = "(" },
-        { ref_table = "card.joker_display_values", ref_value = "blueprint_compat", colour = G.C.RED },
-        { text = ")" }
+    text = {
+        { ref_table = "card.ability.extra", ref_value = "count" },
+        { text = "/" },
+        { ref_table = "card.ability.extra", ref_value = "needed" }
     },
-    calc_function = function(card)
-        local copied_joker, copied_debuff = JokerDisplay.calculate_blueprint_copy(card)
-        card.joker_display_values.blueprint_compat = localize('k_incompatible')
-        JokerDisplay.copy_display(card, copied_joker, copied_debuff)
-    end,
-    get_blueprint_joker = function(card)
-        for i = 1, #G.jokers.cards do
-            if G.jokers.cards[i] == card then
-                return G.jokers.cards[i + 1]
+    style_function = function(card, text, reminder_text, extra)
+        if text and text.children then
+            local colour = lighten(G.C.SUITS.Clubs, 0.35)
+            for _, child in ipairs(text.children) do
+                if child.config then child.config.colour = colour end
             end
         end
-        return nil
+        return false
     end
 }
 --#endregion
@@ -408,7 +398,7 @@ jd_def["j_flower_pot_spades"] = { text = {}, reminder_text = {} }
 --#endregion
 
 --#region Flower Pot — Diamonds (j_flower_pot_diamonds)
--- Nothing to display, per your call.
+-- Nothing to display.
 jd_def["j_flower_pot_diamonds"] = { text = {}, reminder_text = {} }
 --#endregion
 
@@ -458,15 +448,29 @@ jd_def["j_bull"] = {
 }
 --#endregion
 
---[[
-    Flower Pot — Hearts (j_flower_pot_hearts): deliberately no entry here.
-    "Same as Juggler" — Juggler's real vanilla entry is `j_juggler = {}`,
-    an empty table, meaning JokerDisplay applies NO custom display to it
-    at all (falls back to whatever the base game shows by default). So
-    matching Juggler means not overriding this key, not overriding it
-    with an empty one — those aren't quite the same thing, and the
-    correct match for "nothing, like Juggler" is simply not touching it.
-]]
+--#region Flower Pot — Hearts (j_flower_pot_hearts)
+-- Nothing to display.
+jd_def["j_flower_pot_hearts"] = { text = {}, reminder_text = {} }
+--#endregion
+
+--#region Hologram (j_hologram)
+-- Now gains X0.2 per card (was 0.25). Rounded so float drift (1.4000000000000001)
+-- never shows up on the card.
+jd_def["j_hologram"] = {
+    text = {
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult" }
+            }
+        }
+    },
+    calc_function = function(card)
+        local value = card.ability.Xmult or card.ability.x_mult or 1
+        card.joker_display_values.x_mult = tonumber(string.format("%.2f", value))
+    end
+}
+--#endregion
 
 --[[
     Confirmed keys, no override written (need more info to do these safely

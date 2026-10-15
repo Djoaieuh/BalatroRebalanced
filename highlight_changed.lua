@@ -54,7 +54,7 @@ MyMod.change_type = {
     j_runner = 'buffed',
     j_vampire = 'buffed',
     j_mail = 'nerfed',
-    j_fortune_teller = 'buffed',
+    j_fortune_teller = 'reworked',
     j_order = 'buffed',
     j_vagabond = 'buffed',
     j_superposition = 'reworked',
@@ -65,7 +65,6 @@ MyMod.change_type = {
     j_cloud_9 = 'buffed',
     j_erosion = 'reworked',
     j_throwback = 'reworked',
-    j_glass = 'reworked',
     j_merry_andy = 'reworked',
     j_steel_joker = 'reworked',
     j_stone = 'reworked',
@@ -79,18 +78,18 @@ MyMod.change_type = {
     j_bootstraps = 'reworked',
     j_flash = 'buffed',
     j_splash = 'buffed',
+    j_hiker = 'buffed',
+    j_hologram = 'nerfed',
 
     c_pluto = 'nerfed',
     c_mercury = 'nerfed',
     c_uranus = 'buffed',
     c_venus = 'buffed',
-    c_saturn = 'buffed',
     c_jupiter = 'buffed',
     c_earth = 'buffed',
     c_mars = 'buffed',
     c_planet_x = 'buffed',
     c_ceres = 'buffed',
-    c_eris = 'buffed',
     c_neptune = 'buffed'
 }
 

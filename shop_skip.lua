@@ -21,8 +21,27 @@ local function roll_skip_tag_key()
   return key
 end
 
+-- The preview tag and the tag you actually receive are two separate Tag objects, and each rolls
+-- its own bonus card on creation. Roll once per shop visit and share it between both.
+local TAG_ROLL_FIELDS = {
+  ['Charm Tag'] = 'charm_card',        -- extra Tarot
+  ['Buffoon Tag'] = 'buffoon_joker',   -- extra Uncommon/Rare Joker
+  ['Standard Tag'] = 'standard_seal',  -- extra card's Seal
+}
+
+local function sync_tag_roll(tag)
+  local field = TAG_ROLL_FIELDS[tag.name]
+  if not field then return end
+  G.GAME.shop_skip_roll = G.GAME.shop_skip_roll or {}
+  G.GAME.shop_skip_roll[field] = G.GAME.shop_skip_roll[field] or tag.ability[field]
+  tag.ability[field] = G.GAME.shop_skip_roll[field]
+end
+
 function create_UIBox_shop_choice()
   local _tag = Tag(G.GAME.shop_skip_tag_key, nil, G.GAME.blind_on_deck)
+
+  sync_tag_roll(_tag)
+
   local _tag_ui, _tag_sprite = _tag:generate_UI()
   _tag_sprite.states.collide.can = true -- lets hovering the tag show its tooltip
 
@@ -123,6 +142,7 @@ G.FUNCS.shop_choice_enter = function(e)
   stop_use()
   remove_choice_ui()
   G.GAME.shop_skip_tag_key = nil -- unused; new roll next shop
+  G.GAME.shop_skip_roll = nil -- unused; new roll next shop
   G.GAME.shop_choice_made = true
   G.STATE_COMPLETE = false -- next update_shop builds the shop as normal
 end
@@ -143,7 +163,11 @@ G.FUNCS.shop_choice_skip = function(e)
 
   local key = G.GAME.shop_skip_tag_key or roll_skip_tag_key()
   G.GAME.shop_skip_tag_key = nil
-  add_tag(Tag(key, nil, G.GAME.blind_on_deck))
+
+  local new_tag = Tag(key, nil, G.GAME.blind_on_deck)
+  sync_tag_roll(new_tag)  -- same bonus card / Joker / Seal the preview showed
+  G.GAME.shop_skip_roll = nil
+  add_tag(new_tag)
 
   -- fire immediate tags (Skip Tag, Top-up, Economy...) like vanilla skip_blind
   G.E_MANAGER:add_event(Event({

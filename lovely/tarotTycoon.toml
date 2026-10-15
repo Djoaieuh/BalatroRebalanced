@@ -1,0 +1,14 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+# Tarot Tycoon no longer boosts Tarot frequency (it now empowers Tarots instead).
+# Tarot Merchant keeps its vanilla effect.
+[[patches]]
+[patches.pattern]
+target = "card.lua"
+pattern = "if center_table.name == 'Tarot Merchant' or center_table.name == 'Tarot Tycoon' then"
+position = "at"
+payload = "if center_table.name == 'Tarot Merchant' then"
+match_indent = true

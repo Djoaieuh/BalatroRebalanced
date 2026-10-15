@@ -39,15 +39,6 @@ return {
                 },
             },
 
-            j_glass = {
-                name = "Glass Joker",
-                text = {
-                    "Glass cards now have a",
-                    "{C:green}1 in 2{} chance to break",
-                    "but give {X:mult,C:white}X3{} Mult"
-                }
-            },
-
             j_merry_andy = {
                 name = 'Merry Andy',
                 text = {
@@ -98,15 +89,17 @@ return {
             j_flower_pot_hearts = {
                 name = "Hearts Flower Pot",
                 text = {
-                    "{C:attention}+#1#{} hand size",
+                    "Your {C:green}probability{} effects",
+                    "trigger {C:attention}#1#{} extra times",
                 },
             },
 
             j_flower_pot_clubs = {
                 name = "Clubs Flower Pot",
                 text = {
-                    "Copies ability of",
-                    "{C:attention}Joker{} to the right",
+                    "After scoring {C:attention}#1#{} {C:clubs}Clubs{},",
+                    "create a {C:spectral}Spectral{} card",
+                    "{C:inactive}(Must have room) (#2#/#1#)",
                 },
             },
 
@@ -121,9 +114,8 @@ return {
             j_flower_pot_diamonds = {
                 name = "Diamonds Flower Pot",
                 text = {
-                    "Your {C:attention}Enhancements{},",
-                    "{C:attention}Seals{} and {C:attention}Editions{}",
-                    "trigger an {C:attention}extra{} time",
+                    "Every time you {C:money}earn money{},",
+                    "gain {C:money}$#1#{} more",
                 },
             },
 
@@ -184,12 +176,40 @@ return {
                 },
             },
 
+            j_hologram = {
+                name = "Hologram",
+                text = {
+                    "This Joker gains {X:mult,C:white}X#1#{} Mult",
+                    "every time a {C:attention}playing card{}",
+                    "is added to your deck",
+                    "{C:inactive}(Currently {X:mult,C:white}X#2#{C:inactive} Mult)",
+                },
+            },
+
+            j_hiker = {
+                name = "Hiker",
+                text = {
+                    "Every played {C:attention}card{} permanently",
+                    "gains {C:chips}+#1#{} Chips when scored,",
+                    "and the bonus counts {C:attention}immediately{}",
+                },
+            },
+
             j_splash = {
                 name = "Splash",
                 text = {
                     "Every {C:attention}played card{} counts in scoring",
                     "Cards that wouldn't have scored in the",
                     "original hand trigger an {C:attention}extra{} time",
+                },
+            },
+
+            j_fortune_teller = {
+                name = "Fortune Teller",
+                text = {
+                    "After you use a {C:tarot}Tarot{} card,",
+                    "gain {C:red}+#1#{} Mult",
+                    "{C:inactive}(Currently {C:red}+#2#{C:inactive} Mult)",
                 },
             },
         },
@@ -220,7 +240,7 @@ return {
                 name = 'Hone',
                 text = {
                     '{C:green}Uncommon{} Jokers are',
-                    '{C:attention}X2{} as likely to appear'
+                    '{C:attention}X1.5{} as likely to appear'
                 }
             },
 
@@ -356,41 +376,38 @@ return {
             tag_d_six = {
                 name = "D6 Tag",
                 text = {
-                    "Shop rerolls are",
-                    "capped at {C:money}$5{} next shop",
+                    "Your first {C:attention}3{} rerolls in the",
+                    "next {C:attention}shop{} cost {C:money}$0{}",
                 },
             },
-
             tag_charm = {
                 name = "Charm Tag",
                 text = {
-                    "Gives a free {C:attention}Mega Arcana Pack{}",
-                    "Your {C:attention}Arcana Packs{} now offer",
-                    "an {C:attention}extra option{} {C:inactive}(max 2 times){}",
+                    "Get a free {C:attention}Mega Arcana Pack{}",
+                    "with an extra {C:tarot}#1# card{} inside",
                 },
             },
             tag_meteor = {
                 name = "Meteor Tag",
                 text = {
-                    "Gives a free {C:attention}Mega Celestial Pack{}",
-                    "Your {C:attention}Celestial Packs{} now offer",
-                    "an {C:attention}extra option{} {C:inactive}(max 2 times){}",
+                    "Get {C:money}$1{} per {C:planet}Planet{} card",
+                    "used this run",
+                    "{C:inactive}(Currently {C:money}$#1#{C:inactive})",
                 },
             },
             tag_standard = {
                 name = "Standard Tag",
                 text = {
-                    "Gives a free {C:attention}Mega Standard Pack{}",
-                    "Your {C:attention}Standard Packs{} now offer",
-                    "an {C:attention}extra option{} {C:inactive}(max 2 times){}",
+                    "Get a free {C:attention}Mega Standard Pack{}",
+                    "with an extra card with a",
+                    "{C:attention}#1#{}",
                 },
             },
             tag_buffoon = {
                 name = "Buffoon Tag",
                 text = {
-                    "Gives a free {C:attention}Mega Buffoon Pack{}",
-                    "Your {C:attention}Buffoon Packs{} now offer",
-                    "an {C:attention}extra option{} {C:inactive}(max 2 times){}",
+                    "Get a free {C:attention}Mega Buffoon Pack{}",
+                    "with an extra {C:attention}#1#{}",
                 },
             },
 
@@ -449,16 +466,16 @@ return {
             tag_uncommon = {
                 name = "Uncommon Tag",
                 text = {
-                    "Next shop only offers",
-                    "{C:green}Uncommon{} Jokers",
+                    "Next {C:green}Uncommon Joker{} you buy",
+                    "becomes {C:attention}Rental{} and is {C:attention}duplicated{}",
+                    "{C:inactive}(Must have room){}",
                 },
             },
             tag_rare = {
                 name = "Rare Tag",
                 text = {
-                    "Next shop always offers a",
-                    "{C:red}Rare{} Joker with a {C:attention}Rental{}",
-                    "Sticker on every roll",
+                    "Get a free",
+                    "{C:red}Rare Buffoon Pack{}",
                 },
             },
             tag_coupon = {
@@ -478,11 +495,21 @@ return {
                 },
             },
             
+            tag_juggle = {
+                name = "Juggle Tag",
+                text = {
+                    "{C:attention}+4{} hand size. At the end",
+                    "of each round, lose {C:attention}1{}",
+                    "bonus hand size",
+                },
+            },
+
             tag_handy = {
                 name = "Handy Tag",
                 text = {
-                    "{C:blue}+2{} Hands",
-                    "next round only",
+                    "When you run out of {C:blue}hands{}",
+                    "without beating the blind,",
+                    "gain {C:blue}+3{} hands",
                 },
             },
 
@@ -497,6 +524,14 @@ return {
         },
 
         Other = {
+            p_reba_buffoon_rare = {
+                name = "Rare Buffoon Pack",
+                text = {
+                    "Choose {C:attention}#1#{} of up to",
+                    "{C:attention}#2#{} {C:red}Rare{C:attention} Joker{} cards",
+                },
+            },
+
             blue_seal = {
                 name = 'Blue Seal',
                 text = {

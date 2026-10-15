@@ -8,10 +8,10 @@
 --   * The four suit pots never appear in shops/packs (in_pool = false).
 --   * The suit pots are hidden from the Jokers collection until you obtain them.
 --
---   Hearts   : +3 hand size
---   Clubs    : Blueprint effect
---   Spades   : +1 voucher in the shop each Ante
---   Diamonds : enhancements, seals and editions on playing cards trigger an extra time
+--   Hearts   : your probability effects (Lucky Cards, Bloodstone, 8 Ball...) trigger 2 extra times
+--   Clubs    : after scoring 10 Clubs, create a Spectral card
+--   Spades   : +1 voucher in the shop each Ante (unchanged)
+--   Diamonds : every time you earn money, gain $2 more
 
 local SUITS = { 'Hearts', 'Diamonds', 'Spades', 'Clubs' }
 local HIDE_UNTIL_DISCOVERED = true -- set to false while testing if you spawn cards from the collection
@@ -39,7 +39,7 @@ local function hidden_pot(suit, def)
     def.no_mod_badges = true -- hides the mod badge on the card, like take_ownership's silent flag
     -- no_collection is NOT set here: it is refreshed dynamically by the
     -- SMODS.collection_pool hook below, based on whether the pot is discovered.
-    def.rarity = 2
+    def.rarity = 3
     def.cost = 6
     def.atlas = POT_ATLAS[suit] -- each suit pot uses its own art
     def.pos = { x = 0, y = 0 }
@@ -48,63 +48,137 @@ local function hidden_pot(suit, def)
 end
 
 ----------------------------------------------------------------------
--- 2) HEARTS: +3 hand size (same approach as Juggler)
+-- 2) HEARTS: your probability effects trigger 2 extra times.
+--    * Jokers: when a Joker's chance-based effect SUCCEEDS while scoring (Bloodstone, 8 Ball,
+--      Business Card, Reserved Parking...), its calculate is run again 2 more times and the
+--      results are chained on, so each extra trigger rolls its own chance.
+--    * Lucky Cards: same thing for the enhancement's scoring effect.
+--    Only scoring-time contexts are repeated (never end-of-round destruction rolls like Gros Michel).
 ----------------------------------------------------------------------
+local HEARTS_KEY = 'j_flower_pot_hearts'
+
 hidden_pot('Hearts', {
     blueprint_compat = false,
-    config = { extra = { h_size = 4 } },
+    config = { extra = { repeats = 2 } },
     loc_vars = function(self, info_queue, card)
-        return { vars = { card.ability.extra.h_size } }
-    end,
-    add_to_deck = function(self, card, from_debuff)
-        G.hand:change_size(card.ability.extra.h_size)
-    end,
-    remove_from_deck = function(self, card, from_debuff)
-        G.hand:change_size(-card.ability.extra.h_size)
+        return { vars = { card.ability.extra.repeats } }
     end,
 })
 
+if SMODS.hearts_pot_hook_installed then
+    sendWarnMessage("Hearts Flower Pot hook already installed - skipping duplicate.", "FlowerPot")
+else
+    SMODS.hearts_pot_hook_installed = true
+
+    -- total extra triggers from all Hearts pots (each card counted once)
+    local function hearts_extra_triggers()
+        local seen, total = {}, 0
+        for _, c in ipairs(SMODS.find_card(HEARTS_KEY)) do
+            if not seen[c] then
+                seen[c] = true
+                total = total + ((c.ability.extra and c.ability.extra.repeats) or 0)
+            end
+        end
+        return total
+    end
+
+    -- append `add` to the end of ret's extra-chain so it procs right after
+    local function chain_effect(ret, add)
+        if type(ret) ~= 'table' or type(add) ~= 'table' or not next(add) then return end
+        local tail = ret
+        while type(tail.extra) == 'table' do tail = tail.extra end
+        if tail.extra == nil then tail.extra = add end
+    end
+
+    -- remember whether `trigger_obj` rolled (and won) a probability check during the current call
+    local roll_log = nil
+    local pseudorandom_probability_ref = SMODS.pseudorandom_probability
+    function SMODS.pseudorandom_probability(trigger_obj, ...)
+        local result = pseudorandom_probability_ref(trigger_obj, ...)
+        if roll_log and trigger_obj == roll_log.obj and result then
+            roll_log.success = true
+        end
+        return result
+    end
+
+    -- runs `fn()` once, and if a chance-based effect of `obj` succeeded, runs it `extra` more times
+    local function with_extra_triggers(obj, extra, fn)
+        local previous_log = roll_log
+        local log = { obj = obj }
+        roll_log = log
+        local ret, post = fn()
+        roll_log = previous_log
+
+        if log.success and type(ret) == 'table' then
+            SMODS.hearts_pot_running = true
+            for _ = 1, extra do
+                local again = fn()
+                chain_effect(ret, again)
+            end
+            SMODS.hearts_pot_running = nil
+        end
+        return ret, post
+    end
+
+    -- Jokers
+    local calculate_joker_ref = Card.calculate_joker
+    function Card:calculate_joker(context)
+        if SMODS.hearts_pot_running or not context
+            or not (context.individual or context.joker_main or context.before) then
+            return calculate_joker_ref(self, context)
+        end
+        local extra = hearts_extra_triggers()
+        if extra == 0 then return calculate_joker_ref(self, context) end
+        return with_extra_triggers(self, extra, function() return calculate_joker_ref(self, context) end)
+    end
+
+    -- Lucky Cards (and modded chance-based enhancements) while scoring
+    local calculate_enhancement_ref = Card.calculate_enhancement
+    function Card:calculate_enhancement(context)
+        if SMODS.hearts_pot_running or not context or context.extra_enhancement
+            or not (context.main_scoring and context.cardarea == G.play) then
+            return calculate_enhancement_ref(self, context)
+        end
+        local extra = hearts_extra_triggers()
+        if extra == 0 then return calculate_enhancement_ref(self, context) end
+        return with_extra_triggers(self, extra, function() return calculate_enhancement_ref(self, context) end)
+    end
+end
+
 ----------------------------------------------------------------------
--- 3) CLUBS: Blueprint effect (copied from vanilla Blueprint)
+-- 3) CLUBS: after scoring 10 Clubs, create a Spectral card (needs room)
 ----------------------------------------------------------------------
 hidden_pot('Clubs', {
-    blueprint_compat = true,
+    blueprint_compat = false,
+    config = { extra = { needed = 10, count = 0 } },
     loc_vars = function(self, info_queue, card)
-        -- green "Compatible" / red "Incompatible" badge under the description
-        if card.area and card.area == G.jokers then
-            local other_joker
-            for i = 1, #G.jokers.cards do
-                if G.jokers.cards[i] == card then other_joker = G.jokers.cards[i + 1] end
-            end
-            local compatible = other_joker and other_joker ~= card and other_joker.config.center.blueprint_compat
-            local main_end = {
-                {
-                    n = G.UIT.C,
-                    config = { align = "bm", minh = 0.4 },
-                    nodes = {
-                        {
-                            n = G.UIT.C,
-                            config = { ref_table = card, align = "m", colour = compatible and mix_colours(G.C.GREEN, G.C.JOKER_GREY, 0.8) or mix_colours(G.C.RED, G.C.JOKER_GREY, 0.8), r = 0.05, padding = 0.06 },
-                            nodes = {
-                                { n = G.UIT.T, config = { text = ' ' .. localize('k_' .. (compatible and 'compatible' or 'incompatible')) .. ' ', colour = G.C.UI.TEXT_LIGHT, scale = 0.32 * 0.8 } },
-                            }
-                        }
-                    }
-                }
-            }
-            return { main_end = main_end }
-        end
+        return { vars = { card.ability.extra.needed, card.ability.extra.count } }
     end,
     calculate = function(self, card, context)
-        local other_joker = nil
-        for i = 1, #G.jokers.cards do
-            if G.jokers.cards[i] == card then other_joker = G.jokers.cards[i + 1] end
+        if context.blueprint then return end
+        if context.individual and context.cardarea == G.play and context.other_card:is_suit('Clubs') then
+            local extra = card.ability.extra
+            extra.count = extra.count + 1
+
+            if extra.count >= extra.needed
+                and #G.consumeables.cards + G.GAME.consumeable_buffer < G.consumeables.config.card_limit then
+                extra.count = extra.count - extra.needed
+                G.GAME.consumeable_buffer = G.GAME.consumeable_buffer + 1
+                G.E_MANAGER:add_event(Event({
+                    trigger = 'before',
+                    delay = 0.0,
+                    func = function()
+                        SMODS.add_card { set = 'Spectral', key_append = 'reba_clubs_pot' }
+                        G.GAME.consumeable_buffer = 0
+                        return true
+                    end
+                }))
+                return { message = localize('k_plus_spectral'), colour = G.C.SECONDARY_SET.Spectral }
+            end
+
+            -- no room yet: the streak stays full and fires on the next Club once there is space
+            return { message = extra.count .. '/' .. extra.needed, colour = G.C.SUITS.Clubs }
         end
-        local ret = SMODS.blueprint_effect(card, other_joker, context)
-        if ret then
-            ret.colour = G.C.BLUE
-        end
-        return ret
     end,
 })
 
@@ -128,108 +202,37 @@ hidden_pot('Spades', {
 })
 
 ----------------------------------------------------------------------
--- 5) DIAMONDS: the joker itself is just a marker. The effect is the
---    eval_card hook below, which appends extra procs of the card's own
---    enhancement / seal / edition effects (NOT a retrigger, so jokers
---    don't fire again).
+-- 5) DIAMONDS: every time you earn money, gain $2 more.
+--    Hooks ease_dollars: any positive money change gets +$2 per Diamonds pot added to it.
+--    Set G.GAME.reba_no_diamond_bonus = true around an ease_dollars call to skip the bonus
+--    (used by Wraith, which sets your money to an exact amount).
 ----------------------------------------------------------------------
 hidden_pot('Diamonds', {
     blueprint_compat = false,
+    config = { extra = { dollars = 2 } },
+    loc_vars = function(self, info_queue, card)
+        return { vars = { card.ability.extra.dollars } }
+    end,
 })
 
-local GOLD_SEAL_DOLLARS = 3 -- vanilla Gold Seal payout (hardcoded in vanilla, so mirrored here)
-
--- The hook must be installed exactly ONCE. A second copy (e.g. this file loaded twice, or an
--- older paste of this code somewhere else in your mod) makes every proc happen one time too many.
 if SMODS.diamond_pot_hook_installed then
     sendWarnMessage("Diamonds Flower Pot hook already installed - skipping duplicate. Look for a second copy of this code.", "FlowerPot")
 else
     SMODS.diamond_pot_hook_installed = true
 
-    -- keeps the edition popup/sound on the chained edition proc
-    local calculate_effect_ref = SMODS.calculate_effect
-    function SMODS.calculate_effect(effect, scored_card, from_edition, pre_jokers)
-        if type(effect) == 'table' and effect.diamond_pot_edition then from_edition = true end
-        return calculate_effect_ref(effect, scored_card, from_edition, pre_jokers)
-    end
-
-    -- append `add` to the end of ret[key]'s extra-chain so it procs right after
-    local function chain(ret, key, add)
-        if type(add) ~= 'table' or not next(add) then return end
-        if type(ret[key]) ~= 'table' then ret[key] = add; return end
-        local tail = ret[key]
-        while tail.extra do tail = tail.extra end
-        tail.extra = add
-    end
-
-    -- which evaluations count as "the card triggering"
-    local function classify(card, context)
-        if context.extra_enhancement or SMODS.diamond_pot_running then return end
-        if context.main_scoring or context.playing_card_end_of_round then return 'scoring' end
-        if context.repetition_only or (context.discard and context.other_card == card) then return 'calc' end
-    end
-
-    -- number of active Diamonds pots (each card counted once)
-    local function count_pots()
-        local seen, n = {}, 0
-        for _, c in ipairs(SMODS.find_card(POT_KEY)) do
-            if not seen[c] then seen[c] = true; n = n + 1 end
-        end
-        return n
-    end
-
-    local eval_card_ref = eval_card
-    function eval_card(card, context)
-        local ret, post = eval_card_ref(card, context)
-        if not (card and card.playing_card and context) then return ret, post end
-
-        local kind = classify(card, context)
-        if not kind or not card:can_calculate(context.ignore_debuff) then return ret, post end
-
-        local pots = count_pots() -- each Diamonds pot = one extra proc
-        if pots == 0 then return ret, post end
-
-        SMODS.diamond_pot_running = true
-        for _ = 1, pots do
-            if kind == 'scoring' then
-                -- second pass that returns ONLY the enhancement part
-                -- (no base rank chips, no permanent bonuses, and no hardcoded seals)
-                local old = card.ability.extra_enhancement
-                card.ability.extra_enhancement = card.config.center.key
-                context.extra_enhancement = true
-                local extra = eval_card_ref(card, context)
-                context.extra_enhancement = nil
-                card.ability.extra_enhancement = old
-                chain(ret, 'playing_card', extra.playing_card) -- Bonus/Mult/Glass X2/Stone/Steel
-                chain(ret, 'enhancement', extra.enhancement)   -- Lucky and modded enhancements
-
-                -- Gold Seal money is hardcoded in vanilla and skipped by the pass above
-                if context.main_scoring and context.cardarea == G.play and card.seal == 'Gold' then
-                    local seal_obj = G.P_SEALS.Gold
-                    if not (seal_obj and type(seal_obj.get_p_dollars) == 'function') then
-                        chain(ret, 'playing_card', { p_dollars = GOLD_SEAL_DOLLARS })
-                    end
+    local ease_dollars_ref = ease_dollars
+    function ease_dollars(mod, instant)
+        if mod and mod > 0 and G.jokers and not (G.GAME and G.GAME.reba_no_diamond_bonus) then
+            local seen, bonus = {}, 0
+            for _, c in ipairs(SMODS.find_card(POT_KEY)) do
+                if not seen[c] then
+                    seen[c] = true
+                    bonus = bonus + ((c.ability.extra and c.ability.extra.dollars) or 0)
                 end
-
-                -- End of round: Gold Card $ and the Blue Seal planet both live in
-                -- get_end_of_round_effect (Blue Seal is hardcoded and skipped by the flagged pass)
-                if context.end_of_round and context.cardarea == G.hand and context.playing_card_end_of_round then
-                    chain(ret, 'end_of_round', card:get_end_of_round_effect(context))
-                end
-            else
-                -- discard / Red Seal retrigger checks: just calculate again
-                chain(ret, 'enhancement', card:calculate_enhancement(context))
             end
-            if card.edition then
-                local ed = card:calculate_edition(context)
-                if type(ed) == 'table' then ed.diamond_pot_edition = true end
-                chain(ret, 'edition', ed)
-            end
-            if card.seal then chain(ret, 'seals', card:calculate_seal(context)) end -- Red, Purple
+            mod = mod + bonus
         end
-        SMODS.diamond_pot_running = nil
-
-        return ret, post
+        return ease_dollars_ref(mod, instant)
     end
 end
 
@@ -277,7 +280,7 @@ SMODS.Joker:take_ownership('flower_pot', {
         end
         return true
     end,
-    config = { extra = { suit = false, count = 0, needed = 25 } },
+    config = { extra = { suit = false, count = 0, needed = 20 } },
     loc_vars = function(self, info_queue, card)
         local extra = card.ability.extra
         return { vars = {
