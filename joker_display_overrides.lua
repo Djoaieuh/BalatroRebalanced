@@ -129,7 +129,7 @@ jd_def["j_satellite"] = {
         end
         if display_hand then
             local hand = G.GAME.hands[display_hand]
-            card.joker_display_values.amount = (hand and hand.level > 0) and hand.level or 0
+            card.joker_display_values.amount = (hand and hand.level > 0) and (hand.level * card.ability.extra) or 0
             card.joker_display_values.hand_name = localize(display_hand, 'poker_hands')
         end
     end
@@ -175,17 +175,15 @@ jd_def["j_fortune_teller"] = {
 --#endregion
 
 --#region Superposition (j_superposition)
--- Live preview: +1 if the current hand contains an Ace AND qualifies as
--- a Straight, +0 otherwise. Guards against poker_hands['Straight'] being
--- nil (crashed 'next' when nothing scores as a Straight yet).
--- Colour corrected to G.C.SECONDARY_SET.Tarot — that's what the real
--- vanilla j_superposition entry uses (Tarot-themed effect), not purple.
+-- Superposition now adds a Purple Seal to the Ace instead of creating a Tarot,
+-- so the old "+1 Tarot" counter was misleading. Shows Active when the current
+-- hand contains an Ace and a Straight, Inactive otherwise.
 jd_def["j_superposition"] = {
-    text = {
-        { text = "+" },
-        { ref_table = "card.joker_display_values", ref_value = "bonus" }
+    reminder_text = {
+        { text = "(" },
+        { ref_table = "card.joker_display_values", ref_value = "active_text" },
+        { text = ")" },
     },
-    text_config = { colour = G.C.SECONDARY_SET.Tarot },
     calc_function = function(card)
         local text, poker_hands, scoring_hand = JokerDisplay.evaluate_hand()
         local is_straight = poker_hands and poker_hands['Straight'] and next(poker_hands['Straight'])
@@ -198,7 +196,16 @@ jd_def["j_superposition"] = {
                 end
             end
         end
-        card.joker_display_values.bonus = (is_straight and found_ace) and 1 or 0
+        card.joker_display_values.is_active = (is_straight and found_ace) and true or false
+        card.joker_display_values.active_text = localize("jdis_" ..
+            (card.joker_display_values.is_active and "active" or "inactive"))
+    end,
+    style_function = function(card, text, reminder_text, extra)
+        if reminder_text and reminder_text.children[2] then
+            reminder_text.children[2].config.colour = card.joker_display_values.is_active and G.C.GREEN or
+                G.C.UI.TEXT_INACTIVE
+        end
+        return false
     end
 }
 --#endregion
@@ -212,15 +219,10 @@ jd_def["j_stone"] = { text = {}, reminder_text = {} }
 --#endregion
 
 --#region Shoot the Moon (j_shoot_the_moon)
--- UNVERIFIED. take_ownership('shoot_the_moon', {blueprint_compat = false})
--- shows no config, no calculate function, no ability.extra — the lovely
--- patch only deletes the vanilla bonus. The "convert suits to match a
--- leading Queen" mechanic has not been confirmed anywhere in the source
--- shown to me; it may live in a main.lua evaluate_play hook, or may not
--- currently exist at all. This preview logic is a guess at what such a
--- hook would check, not a confirmed read of an actual mechanic. Paste
--- the evaluate_play hook (or confirm there isn't one) before trusting
--- this in-game.
+-- The mechanic is the G.FUNCS.evaluate_play hook in main.lua: it checks the
+-- first PLAYED card (G.play.cards[1]), not the first scoring card. So the
+-- preview looks at the left-most highlighted card in hand (or the first card
+-- in the play area while a hand is being scored).
 jd_def["j_shoot_the_moon"] = {
     reminder_text = {
         { text = "(" },
@@ -228,9 +230,15 @@ jd_def["j_shoot_the_moon"] = {
         { text = ")" },
     },
     calc_function = function(card)
-        local text, poker_hands, scoring_hand = JokerDisplay.evaluate_hand()
-        local first_card = scoring_hand and scoring_hand[1]
-        card.joker_display_values.is_active = first_card and first_card:get_id() == 12
+        local first_card
+        if G.play and G.play.cards and #G.play.cards > 0 then
+            first_card = G.play.cards[1]
+        elseif G.hand and G.hand.highlighted then
+            for _, c in ipairs(G.hand.highlighted) do
+                if not first_card or c.T.x < first_card.T.x then first_card = c end
+            end
+        end
+        card.joker_display_values.is_active = first_card and first_card:get_id() == 12 or false
         card.joker_display_values.active_text = localize("jdis_" ..
             (card.joker_display_values.is_active and "active" or "inactive"))
     end,
@@ -472,13 +480,49 @@ jd_def["j_hologram"] = {
 }
 --#endregion
 
+--#region Glass Joker (j_glass)
+-- Glass Joker no longer scales card.ability.x_mult: its value is computed from
+-- G.GAME.reba_glass_broken (every Glass Card broken this run), so the vanilla
+-- display would be stuck on X1. Same formula as the calculate in main.lua.
+jd_def["j_glass"] = {
+    text = {
+        {
+            border_nodes = {
+                { text = "X" },
+                { ref_table = "card.joker_display_values", ref_value = "x_mult" }
+            }
+        }
+    },
+    calc_function = function(card)
+        local broken = (G.GAME and G.GAME.reba_glass_broken) or 0
+        card.joker_display_values.x_mult = tonumber(string.format("%.2f", 1 + card.ability.extra * broken))
+    end
+}
+--#endregion
+
+--#region Hanging Chad (j_hanging_chad)
+-- card.ability.extra is now a table ({ repetitions = 1 }) and the Joker
+-- retriggers the first AND last scoring card. The vanilla display multiplies
+-- card.ability.extra as a number, which would error on a table, so it needs
+-- its own retrigger_function. A lone scoring card is both first and last, so
+-- it gets 2 retriggers (same as the calculate in main.lua).
+jd_def["j_hanging_chad"] = {
+    retrigger_function = function(playing_card, scoring_hand, held_in_hand, joker_card)
+        if held_in_hand or not scoring_hand then return 0 end
+        local reps = 0
+        if playing_card == scoring_hand[1] then reps = reps + joker_card.ability.extra.repetitions end
+        if playing_card == scoring_hand[#scoring_hand] then reps = reps + joker_card.ability.extra.repetitions end
+        return reps * JokerDisplay.calculate_joker_triggers(joker_card)
+    end
+}
+--#endregion
+
 --[[
     Confirmed keys, no override written (need more info to do these safely
     or correctly):
 
-    j_order (The Order — X3 -> X4 Mult on Straight), j_zany / j_mad /
-    j_crazy / j_wily / j_clever / j_devious (the type-mult/chip family),
-    Vampire, Hanging Chad, and the plain stat-tweak jokers
+    j_zany / j_mad / j_crazy / j_wily / j_clever / j_devious (the
+    type-mult/chip family), Vampire, and the plain stat-tweak jokers
     (greedy/lusty/wrathful/gluttenous, four_fingers, shortcut, 8_ball,
     runner, mail, card_sharp) — all confirmed safe. Vanilla itself stores their config exactly the way you have it
     (top-level t_mult/type/Xmult, extra sometimes a bare number), so these

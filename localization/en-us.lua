@@ -559,7 +559,7 @@ return {
                     "played, if held in hand.",
                     "{C:red}Destroys{} this card after",
                     "generating {C:attention}3{} Planet cards.",
-                    "{C:inactive}(#1# left !)#"
+                    "{C:inactive}(#1# left !)"
                 }
             }
         },

@@ -38,6 +38,9 @@ MyMod.change_type = {
     v_illusion = 'reworked',
     v_planet_merchant = 'reworked',
     v_planet_tycoon = 'reworked',
+    v_tarot_tycoon = 'reworked',
+
+    b_black = 'reworked',
 
     j_greedy_joker = 'buffed',
     j_lusty_joker = 'buffed',
@@ -55,7 +58,6 @@ MyMod.change_type = {
     j_vampire = 'buffed',
     j_mail = 'nerfed',
     j_fortune_teller = 'reworked',
-    j_order = 'buffed',
     j_vagabond = 'buffed',
     j_superposition = 'reworked',
     j_onyx_agate = 'reworked',
@@ -80,6 +82,7 @@ MyMod.change_type = {
     j_splash = 'buffed',
     j_hiker = 'buffed',
     j_hologram = 'nerfed',
+    j_glass = 'reworked',
 
     c_pluto = 'nerfed',
     c_mercury = 'nerfed',

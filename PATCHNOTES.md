@@ -68,10 +68,6 @@ Fortune Teller :
 - Old : "+1 Mult per Tarot card used this run"
 - New : "After you use a Tarot card, gain +2 Mult"
 
-The Order : 
-- Old : "X3 Mult if played hand contains a Straight"
-- New : "**X4** Mult if played hand contains a Straight"
-
 Vagabond : 
 - Old : "Create a Tarot card if hand is played with $4 or less"
 - New : "Create a Tarot card if hand is played with **$6** or less"
@@ -95,6 +91,8 @@ Loyalty Card :
 - Old : Rarity : Uncommon / Price : $5
 - New : Rarity : Common / Price : $4
 
+- New : Can no longer spawn with an Eternal Sticker
+
 Hanging Chad : 
 - Old : "Retrigger first played card used in scoring 2 additional times"
 - New : "Retrigger the first and last played card in scoring"
@@ -107,6 +105,8 @@ Erosion :
 - Old : "+4 Mult for each card below the deck's starting size in your full deck"
 - New : "Destroys 1 scored Stone Card per hand to gain X0.25 Mult"
 
+- New : Only appears in the shop when you have at least one Stone Card in your deck
+
 Throwback : 
 - Old : "X0.25 Mult for each Blind skipped this run"
 - New : "Once per round, after you skip a Booster Pack, open another of the same type"
@@ -114,6 +114,13 @@ Throwback :
 Merry Andy : 
 - Old : "+3 discards each round, -1 hand size"
 - New : "Gives +3 discard and -1 Consumable slot"
+
+- Old : Unlocked by skipping 6 Blinds in a single run
+- New : Unlocked by skipping 6 shops in a single run
+
+Wee Joker : 
+- Old : Unlocked by skipping 9 Blinds in a single run
+- New : Unlocked by skipping 9 shops in a single run
 
 Steel Joker :
 - Old : "X0.2 Mult for each Steel Card in your full deck"
@@ -125,7 +132,7 @@ Stone Joker :
 
 Flower Pot : 
 - Old : "X3 Mult if poker hand contains a Diamond card, Club card, Heart card, and Spade card"
-- New : "After playing 25 cards of the same suit in a row, transforms into that suit's Flower Pot"
+- New : "After playing 20 cards of the same suit in a row, transforms into that suit's Flower Pot"
 
 - Old : Rarity : Uncommon
 - New : Rarity : Rare
@@ -142,10 +149,10 @@ Spades Flower Pot (NEW) :
 Diamonds Flower Pot (NEW) : 
 - "Every time you earn money, gain $2 more"
 
-Satelite : 
+Satellite : 
 - Old : "Earn $1 at end of round per unique Planet card used this run"
-- New : "At end of round, gain $1 for each Pair level you have. After you play a Pair, this changes hand" 
-*(This is not always on Pairs, the hand is chosen randomly every time)*
+- New : "At end of round, gain **$2** for each [poker hand] level you have. After you play that hand, this changes hand" 
+*(It starts on your most played hand, then switches to a random hand every time you play it)*
 
 Shoot the Moon :
 - Old : "Each Queen held in hand gives +13 Mult"
@@ -177,7 +184,7 @@ Bootstraps :
 
 Flash Card : 
 - Old : "This Joker gains +2 Mult per reroll in the shop"
-- New : "This Joker gain **+3** Mult per reroll in the shop"
+- New : "This Joker gains **+3** Mult per reroll in the shop"
 
 Splash : 
 - Old : "Every played card counts in scoring"
@@ -185,7 +192,7 @@ Splash :
 
 Hiker : 
 - Old : "Every played card permanently gains +5 Chips when scored"
-- New : "Every played card permanently gains **+7** Chips when scored"
+- New : "Every played card permanently gains **+7** Chips when scored, and the bonus counts immediately"
 
 Hologram : 
 - Old : "This Joker gains X0.25 Mult every time a playing card is added to your deck"
@@ -193,7 +200,7 @@ Hologram :
 
 Glass Joker : 
 - Old : "This Joker gains X0.75 Mult for every Glass Card that is destroyed"
-- New : "0.75X Mult for every Glass Card that was destroyed this run"
+- New : "X0.75 Mult for every Glass Card that was destroyed this run"
 
 ## Vouchers
 
@@ -232,7 +239,7 @@ Tarot Tycoon :
 
 The Lovers : 
 - Old : "Enhances 1 selected card into a Wild Card"
-- New : "Enhances **2** selected card into a Wild Card"
+- New : "Enhances **2** selected cards into Wild Cards"
 
 ### Spectral Cards
 
@@ -412,7 +419,7 @@ Juggle Tag :
 ## Enhancements 
 
 Wild Cards : 
-- New : Wilds Cards no longer get debuffed by The Club, The Goad, The Head and The Window Boss Blinds
+- New : Wild Cards no longer get debuffed by The Club, The Goad, The Head and The Window Boss Blinds
 
 ## Seals
 
@@ -425,12 +432,3 @@ Blue Seal :
 Blue Stake : 
 - Old : "-1 discard"
 - New : "Shop rerolls increment by $1 extra"
-
-
-
-
-
-
-
-
-

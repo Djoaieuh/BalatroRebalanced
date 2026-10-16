@@ -30,7 +30,7 @@
 - Glass Joker now gains 0.75X mult per Glass card you've destroyed this run
 - D6 Tag now makes your next 3 rerolls cost $0
 - Tarot Tycoon now gives a chance for your Tarots cards to be empowered (Empowered Tarots cards are more powerful versions of the original)
-
+- The Order was reverted to X3 mult
 
 ## [0.2.1]
 

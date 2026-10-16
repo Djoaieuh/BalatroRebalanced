@@ -781,8 +781,6 @@ SMODS.Joker:take_ownership('fortune_teller', {
     end,
 }, true)
 
-SMODS.Joker:take_ownership('order', {config = {Xmult = 4, type = 'Straight'}, }, true)
-
 SMODS.Joker:take_ownership('vagabond',{config = {extra = 6}} , true)
 
 SMODS.Joker:take_ownership('card_sharp',{config = {extra = {Xmult = 2}}} , true)
