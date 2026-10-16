@@ -4,7 +4,7 @@
     #define MY_HIGHP_OR_MEDIUMP mediump
 #endif
 
-// Steamodded strips the mod prefix, so this is plain "empowered" (NOT reba_empowered).
+// Steamodded strips the mod prefix, so this is plain "empowered".
 extern MY_HIGHP_OR_MEDIUMP vec2 empowered;          // x = tilt, y = real time (sent by the game)
 extern MY_HIGHP_OR_MEDIUMP number empower_prog;     // 0 -> 1 during the reveal (sent by tarotTycoon.lua)
 
@@ -77,42 +77,55 @@ vec4 effect(vec4 colour, Image texture, vec2 texture_coords, vec2 screen_coords)
     float tilt = empowered.x;
     float t    = empowered.y;
 
-    vec3 deep   = vec3(0.25, 0.02, 0.45);
-    vec3 bright = vec3(0.85, 0.30, 1.00);
-    vec3 hot    = vec3(1.00, 0.85, 1.00);
+    vec3 deep   = vec3(0.30, 0.03, 0.55);
+    vec3 bright = vec3(0.90, 0.32, 1.00);
+    vec3 hot    = vec3(1.00, 0.88, 1.00);
 
-    // 1. iridescent sheen that follows tilt
-    float band = sin((uv.x + uv.y)*7.0 + tilt*14.0 + fbm(uv*4.0)*3.0);
-    vec3 sheen = bright * pow(max(band, 0.0), 4.0) * 0.35;
-
-    // 2. flames rising from the bottom (uv.y grows downward)
-    float fl = fbm(vec2(uv.x*4.0, uv.y*3.0 - t*0.9));
-    float flameMask = smoothstep(0.45, 1.0, uv.y) * smoothstep(0.25, 0.75, fl);
-    vec3 flame = mix(deep, bright, fl) + hot * pow(flameMask, 3.0) * 0.5;
-
-    // 3. pulsing rim glow
-    float d = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
-    float rim = smoothstep(0.14, 0.0, d) * (0.6 + 0.4*sin(t*2.5));
-
-    // 4. embers rising
-    vec2 g = uv*vec2(9.0, 13.0);
-    g.y += t*1.6;
-    vec2 id = floor(g);
-    vec2 cell = fract(g) - 0.5;
-    float r = hash(id);
-    cell.x -= sin(t*2.0 + r*6.28)*0.2;
-    float ember = step(0.72, r) * smoothstep(0.14, 0.0, length(cell))
-                * (0.5 + 0.5*sin(t*5.0 + r*20.0));
-
-    // reveal sweep: wavefront travels bottom -> top while empower_prog goes 0 -> 1
+    // ---- reveal sweep: wavefront travels bottom -> top while empower_prog goes 0 -> 1
     float p      = empower_prog;
     float front  = p*1.6 - 0.3;
-    float dist   = 1.0 - uv.y;                         // 0 at bottom, 1 at top
+    float dist   = 1.0 - uv.y;                          // 0 at bottom, 1 at top
     float reveal = 1.0 - smoothstep(front - 0.25, front, dist);
     float edge   = exp(-pow((dist - front)*8.0, 2.0)) * (1.0 - p);
 
-    vec3 add = sheen + flame*flameMask*0.85 + bright*rim*0.7 + hot*ember;
-    add = add*reveal + hot*edge*0.9;
+    // ---- 1. mild darkening: art stays readable, just moodier and purple-tinted
+    float lum    = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
+    vec3 graded  = mix(tex.rgb, vec3(lum), 0.15) * vec3(0.78, 0.66, 0.92);
+    vec2 cc      = (uv - 0.5) * vec2(1.0, 0.85);
+    float vig    = smoothstep(0.3, 0.75, length(cc));
+    graded       = mix(graded, deep*0.5, vig*0.3);
+    tex.rgb      = mix(tex.rgb, graded, reveal);
+
+    // ---- 2. low purple fire along the bottom edge only
+    float h  = uv.y;                                    // 1 at the bottom
+    float n1 = fbm(vec2(uv.x*5.0, uv.y*3.5 - t*1.2));
+    float n2 = fbm(vec2(uv.x*9.0 + 5.0, uv.y*6.0 - t*2.0));
+    float f  = clamp((n1*0.7 + n2*0.3) + (h - 0.70)*2.0 - 0.45, 0.0, 1.0);
+    f        = smoothstep(0.10, 0.55, f);
+    vec3 flameCol = mix(deep, bright, f) + hot * pow(f, 3.0) * 0.15;
+
+    // ---- 3. faint energy veins
+    vec2 vp     = uv*vec2(5.0, 7.0) + vec2(tilt*0.6, -t*0.35);
+    float ridge = abs(fbm(vp) - 0.5);
+    float vein  = smoothstep(0.035, 0.0, ridge);
+    vein       *= 0.5 + 0.5*sin(t*3.0 + fbm(uv*3.0)*6.0);
+
+    // ---- 4. pulsing rim glow
+    float d   = min(min(uv.x, 1.0 - uv.x), min(uv.y, 1.0 - uv.y));
+    float rim = smoothstep(0.16, 0.0, d) * (0.7 + 0.3*sin(t*2.5));
+
+    // ---- 5. rising stars / embers on the card
+    vec2 g = uv*vec2(9.0, 13.0);
+    g.y += t*1.6;
+    vec2 id   = floor(g);
+    vec2 cell = fract(g) - 0.5;
+    float r   = hash(id);
+    cell.x   -= sin(t*2.0 + r*6.28)*0.2;
+    float ember = step(0.66, r) * smoothstep(0.12, 0.0, length(cell))
+                * (0.5 + 0.5*sin(t*5.0 + r*20.0));
+
+    vec3 add = flameCol*f*0.5 + bright*vein*0.32 + bright*rim*0.5 + hot*ember*0.9;
+    add = add*reveal + hot*edge*0.7;
 
     tex.rgb += add * tex.a;
     return dissolve_mask(tex*colour, texture_coords, uv);

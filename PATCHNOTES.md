@@ -191,6 +191,10 @@ Hologram :
 - Old : "This Joker gains X0.25 Mult every time a playing card is added to your deck"
 - New : "This Joker gains **X0.2** Mult every time a playing card is added to your deck"
 
+Glass Joker : 
+- Old : "This Joker gains X0.75 Mult for every Glass Card that is destroyed"
+- New : "0.75X Mult for every Glass Card that was destroyed this run"
+
 ## Vouchers
 
 Hone : 
@@ -216,6 +220,11 @@ Planet Merchant :
 Planet Tycoon : 
 - Old : "Planet cards appear 4X more frequently in the shop"
 - New : "Planet cards now upgrade your poker hands by an extra level"
+
+Tarot Tycoon : 
+- Old : "Tarot cards appear 4X more frequently in the shop"
+- New : "Tarot cards from the shop and Arcana Packs have a chance to be Empowered"
+*(Empowered Tarots cards are more powerful versions of the original)*
 
 ## Consumables
 
@@ -377,7 +386,7 @@ Coupon Tag :
 
 D6 Tag : 
 - Old : "Rerolls in next shop start a $0"
-- New : "Your first 3 rerolls in the next shop cost $0"
+- New : "Your next 3 rerolls cost $0"
 
 Top-up Tag : 
 - Old : "Create up to 2 Common Jokers"

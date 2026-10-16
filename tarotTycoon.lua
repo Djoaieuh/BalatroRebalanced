@@ -20,6 +20,39 @@ local EMPOWERED_OF = {}   -- 'c_chariot' -> 'c_<prefix>_empowered_chariot'
 local BASE_OF      = {}   -- the reverse
 local POOL         = {}   -- every empowered key (Emperor picks from this)
 
+-- the last Tarot/Planet used, always as its VANILLA key (empowered keys are mapped back)
+local function resolve_last()
+    local last = G.GAME and G.GAME.last_tarot_planet
+    if last and BASE_OF[last] then last = BASE_OF[last] end
+    return last
+end
+
+-- the green/red name pill vanilla's Fool shows under its text
+local function fool_pill(name, valid)
+    return { {
+        n = G.UIT.C, config = { align = 'bm', padding = 0.02 },
+        nodes = { {
+            n = G.UIT.C, config = { align = 'm', colour = valid and G.C.GREEN or G.C.RED, r = 0.05, padding = 0.05 },
+            nodes = { { n = G.UIT.T, config = { text = ' ' .. name .. ' ', colour = G.C.UI.TEXT_LIGHT, scale = 0.3, shadow = true } } },
+        } },
+    } }
+end
+
+local function holding_consumable(key)
+    for _, c in ipairs(G.consumeables and G.consumeables.cards or {}) do
+        if c.config and c.config.center and c.config.center.key == key then return true end
+    end
+    return false
+end
+
+-- Plain and Empowered versions count as the SAME card: true while you hold either one
+-- (and have no Showman), so neither version gets generated / rolled again.
+local function pool_blocked(vanilla_key)
+    local ekey = EMPOWERED_OF[vanilla_key]
+    if not ekey or next(find_joker('Showman')) then return false end
+    return holding_consumable(vanilla_key) or holding_consumable(ekey)
+end
+
 --#region Voucher
 
 -- Tarot Tycoon no longer boosts Tarot frequency (same idea as Planet Tycoon).
@@ -27,8 +60,8 @@ SMODS.Voucher:take_ownership('tarot_tycoon', {
     loc_txt = {
         name = 'Tarot Tycoon',
         text = {
-            '{C:tarot}Tarot{} cards in the shop and',
-            '{C:attention}Arcana Packs{} have a {C:green}' .. math.floor(EMPOWER_CHANCE * 100) .. '%{} chance',
+            '{C:tarot}Tarot{} cards from the shop and',
+            '{C:attention}Arcana Packs{} have a chance',
             'to be {C:purple}Empowered{}',
         },
     },
@@ -51,6 +84,7 @@ local function send_progress(card)
 end
 
 -- idle bob: faint oversized ghost floating behind the card (like The Soul)
+-- (delete this DrawStep if you don't like the dark halo it adds)
 SMODS.DrawStep({
     key = 'empowered_aura',
     order = 9, -- CHECK: must draw before the center sprite
@@ -78,6 +112,7 @@ SMODS.DrawStep({
     conditions = { vortex = false, facing = 'front' },
 })
 
+
 local function after(delay, fn)
     G.E_MANAGER:add_event(Event({
         trigger = 'after', delay = delay, blockable = false,
@@ -85,19 +120,20 @@ local function after(delay, fn)
     }))
 end
 
+-- the reveal: juice, sound, shake, shader sweep 0 -> 1 (the fire fades in with it)
 local function empower_fx(card)
     card.reba_prog = 0
     card:juice_up(0.6, 0.4)
     play_sound('holo1', 0.55, 0.9)
     play_sound('gold_seal', 0.7, 0.5)
 
-    -- smaller, fewer, slower
+    -- subtle burst around the card
     Particles(card.T.x + card.T.w / 2, card.T.y + card.T.h / 2, 0, 0, {
-    timer_type = 'TOTAL', timer = 0.05, pulse_max = 8,
-    scale = 0.22, speed = 1.5, lifespan = 1.1,
-    attach = card,
-    colours = { HEX('d94dff'), HEX('7a1fd1'), HEX('fff0ff') },
-    fill = true,
+        timer_type = 'TOTAL', timer = 0.07, pulse_max = 5,
+        scale = 0.11, speed = 1.0, lifespan = 0.9,
+        attach = card,
+        colours = { HEX('d94dff'), HEX('7a1fd1'), HEX('fff0ff') },
+        fill = true,
     })
 
     -- surging shake while the flames sweep up, fading out as it completes
@@ -136,6 +172,7 @@ local function register(name, vanilla_key, def)
     def.cost = vc.cost or 3
     def.discovered = true
     def.no_mod_badges = true                -- hides the "Balatro Rebalanced" mod badge
+    def.no_collection = true                -- not shown in the Collection
     def.reba_empowered = true               -- read by the draw steps
     def.in_pool = function() return false end
     def.set_badges = badge
@@ -332,20 +369,46 @@ register('death', 'c_death', {
 })
 
 register('high_priestess', 'c_high_priestess', {
-    config = { extra = { planets = 3 } },
-    loc_txt = { name = 'Empowered High Priestess', text = { 'Creates up to {C:attention}#1#{} random', '{C:planet}Planet{} cards', '{C:inactive}(Must have room){}' } },
-    loc_vars = function(self, info_queue, card) return { vars = { card.ability.extra.planets } } end,
-    can_use = function(self, card) return room_for_consumable(card) end,
+    config = { extra = { planets = 3, levels = 2 } },
+    loc_txt = {
+        name = 'Empowered High Priestess',
+        text = {
+            'Creates {C:attention}#1#{} random {C:planet}Planet{} cards,',
+            'any that don\'t fit {C:attention}level up{}',
+            'their hand by {C:attention}#2#{} levels instead',
+        },
+    },
+    loc_vars = function(self, info_queue, card)
+        return { vars = { card.ability.extra.planets, card.ability.extra.levels } }
+    end,
+    can_use = function(self, card) return true end,
     use = function(self, card, area, copier)
+        local levels = card.ability.extra.levels
         for i = 1, card.ability.extra.planets do
             G.E_MANAGER:add_event(Event({
-                trigger = 'before', delay = 0.0,
+                trigger = 'after', delay = (i == 1) and 0.4 or 0.6,
                 func = function()
                     if #G.consumeables.cards < G.consumeables.config.card_limit then
                         play_sound('timpani')
                         SMODS.add_card({ set = 'Planet', area = G.consumeables, key_append = 'reba_empowered_priestess' })
-                        card:juice_up(0.3, 0.5)
+                    else
+                        -- no room: roll a Planet, but level up its hand instead of keeping the card
+                        local p = SMODS.create_card({ set = 'Planet', area = G.consumeables, key_append = 'reba_empowered_priestess' })
+                        local hand = p.config.center.config and p.config.center.config.hand_type
+                        p:remove()
+                        if hand and G.GAME.hands[hand] then
+                            update_hand_text({ sound = 'button', volume = 0.7, pitch = 0.8, delay = 0.3 }, {
+                                handname = localize(hand, 'poker_hands'),
+                                chips = G.GAME.hands[hand].chips,
+                                mult = G.GAME.hands[hand].mult,
+                                level = G.GAME.hands[hand].level,
+                            })
+                            level_up_hand(card, hand, nil, levels)
+                            update_hand_text({ sound = 'button', volume = 0.7, pitch = 1.1, delay = 0 },
+                                { mult = 0, chips = 0, handname = '', level = '' })
+                        end
                     end
+                    card:juice_up(0.3, 0.5)
                     return true
                 end,
             }))
@@ -366,7 +429,12 @@ register('emperor', 'c_emperor', {
                 func = function()
                     if #G.consumeables.cards < G.consumeables.config.card_limit then
                         play_sound('timpani')
-                        local ekey = (pseudorandom_element(POOL, pseudoseed('reba_empowered_emperor')))
+                        local choices = {}
+                        for _, ek in ipairs(POOL) do
+                            if not pool_blocked(BASE_OF[ek]) then choices[#choices + 1] = ek end
+                        end
+                        if #choices == 0 then choices = POOL end
+                        local ekey = (pseudorandom_element(choices, pseudoseed('reba_empowered_emperor')))
                         spawn_empowered(ekey, 'reba_empowered_emperor')
                         card:juice_up(0.3, 0.5)
                     end
@@ -479,23 +547,31 @@ register('fool', 'c_fool', {
     loc_txt = {
         name = 'Empowered Fool',
         text = {
-            'Creates an {C:purple}Empowered{} copy of the',
-            'last {C:tarot}Tarot{} or {C:planet}Planet{} card used',
-            '{C:inactive}(Planets are copied as normal)',
-            '{s:0.8,C:inactive}(Currently #1#)',
+            'Creates the last',
+            '{C:tarot}Tarot{} or {C:planet}Planet{} card',
+            'used during this run',
+            '{s:0.8,C:tarot}The Fool{s:0.8} excluded',
+            '{C:tarot}Tarot{} cards are {C:purple}Empowered{}',
         },
     },
     loc_vars = function(self, info_queue, card)
-        local last = G.GAME and G.GAME.last_tarot_planet
-        local c = last and G.P_CENTERS[last]
-        return { vars = { c and localize { type = 'name_text', key = c.key, set = c.set } or localize('k_none') } }
+        local last = resolve_last()
+        local c = last and last ~= 'c_fool' and G.P_CENTERS[last]
+        -- Tarots come out Empowered, Planets as normal
+        local target = c and (G.P_CENTERS[EMPOWERED_OF[last] or ''] or c)
+        local name = target and localize { type = 'name_text', key = target.key, set = target.set } or localize('k_none')
+        if target then info_queue[#info_queue + 1] = target end
+        return { vars = { name }, main_end = fool_pill(name, target ~= nil) }
     end,
     can_use = function(self, card)
-        local last = G.GAME.last_tarot_planet
-        return room_for_consumable(card) and last and last ~= 'c_fool' and G.P_CENTERS[last] ~= nil
+        local last = resolve_last()
+        -- The Fool and Empowered Fool never copy each other
+        return room_for_consumable(card) and last ~= nil and last ~= 'c_fool' and G.P_CENTERS[last] ~= nil
     end,
     use = function(self, card, area, copier)
-        local last = G.GAME.last_tarot_planet
+        -- card.reba_prev_last = what was stored BEFORE this card was used (set in Card:use_consumeable below)
+        local last = card.reba_prev_last and (BASE_OF[card.reba_prev_last] or card.reba_prev_last) or resolve_last()
+        if not last or last == 'c_fool' then return end
         G.E_MANAGER:add_event(Event({
             trigger = 'after', delay = 0.4,
             func = function()
@@ -521,9 +597,9 @@ register('judgement', 'c_judgement', {
     loc_txt = {
         name = 'Empowered Judgement',
         text = {
-            'Creates {C:attention}#1#{} random {C:attention}Jokers{}',
-            'Jokers without room are',
-            '{C:attention}sold{} for their full price',
+            'Creates {C:attention}#1#{} random {C:attention}Jokers{},',
+            'any that don\'t fit are',
+            '{C:attention}sold{} at full price instead',
         },
     },
     loc_vars = function(self, info_queue, card) return { vars = { card.ability.extra.count } } end,
@@ -544,9 +620,6 @@ register('judgement', 'c_judgement', {
                         local value = j.cost or 0 -- CHECK: "full value" = shop price. Use j.sell_cost for sell value
                         j:remove()
                         ease_dollars(value, true)
-                        card_eval_status_text(card, 'extra', nil, nil, nil, {
-                            message = localize('$') .. value, colour = G.C.MONEY,
-                        })
                     end
                     card:juice_up(0.3, 0.5)
                     return true
@@ -561,25 +634,85 @@ register('judgement', 'c_judgement', {
 
 --#region Last-used bookkeeping (for The Fool)
 
--- Vanilla stores the used card's key in G.GAME.last_tarot_planet BEFORE its effect runs.
---  * Empowered cards are stored as their vanilla base key, so the normal Fool
---    always makes a NON-empowered copy and the Empowered Fool re-empowers it.
---  * Empowered Fool never overwrites it (just like vanilla Fool).
-if set_consumeable_usage then
-    local usage_ref = set_consumeable_usage
-    function set_consumeable_usage(card)
-        local prev = G.GAME.last_tarot_planet
-        usage_ref(card)
-        local key = card and card.config and card.config.center_key
-        if key and BASE_OF[key] then
-            if key == EMPOWERED_OF['c_fool'] then
-                G.GAME.last_tarot_planet = prev
-            else
-                G.GAME.last_tarot_planet = BASE_OF[key]
-            end
+-- Vanilla records the used card's key in G.GAME.last_tarot_planet.
+--  * Empowered cards are stored as their vanilla key, so a normal Fool can never make an Empowered card.
+--  * Empowered Fool never overwrites it (just like vanilla Fool), so the Fools never copy each other.
+local use_consumeable_ref = Card.use_consumeable
+function Card:use_consumeable(area, copier)
+    local key = self.config and self.config.center and self.config.center.key
+    local prev = G.GAME.last_tarot_planet
+    self.reba_prev_last = prev
+    local ret = use_consumeable_ref(self, area, copier)
+    if key and BASE_OF[key] then
+        if key == EMPOWERED_OF['c_fool'] then
+            G.GAME.last_tarot_planet = prev
+        else
+            G.GAME.last_tarot_planet = BASE_OF[key]
         end
     end
+    return ret
 end
+
+-- Safety net: whatever records the last used card, keep it as the plain key every frame.
+-- Empowered Fool never replaces it (restores the last good value).
+local game_update_ref = Game.update
+function Game:update(dt)
+    game_update_ref(self, dt)
+    local g = G.GAME
+    if g then
+        local l = g.last_tarot_planet
+        if l and BASE_OF[l] then
+            if l == EMPOWERED_OF['c_fool'] then g.last_tarot_planet = g.reba_last_good
+            else g.last_tarot_planet = BASE_OF[l] end
+            l = g.last_tarot_planet
+        end
+        g.reba_last_good = l
+    end
+end
+
+-- Holding an Empowered Tarot stops its plain version from being generated (unless you own Showman).
+-- (The Fool does the same inside its own take_ownership below.)
+for vkey in pairs(EMPOWERED_OF) do
+    if vkey ~= 'c_fool' then
+        SMODS.Consumable:take_ownership(vkey:sub(3), {
+            in_pool = function(self, args) return not pool_blocked(vkey) end,
+        }, true)
+    end
+end
+
+-- Normal Fool: same as vanilla, but it always copies the PLAIN version and never copies Empowered Fool
+SMODS.Consumable:take_ownership('fool', {
+    loc_vars = function(self, info_queue, card)
+        local last = resolve_last()
+        local c = last and last ~= 'c_fool' and G.P_CENTERS[last]
+        local name = c and localize { type = 'name_text', key = c.key, set = c.set } or localize('k_none')
+        if c then info_queue[#info_queue + 1] = c end
+        return { vars = { name }, main_end = fool_pill(name, c and true or false) }
+    end,
+    -- holding an Empowered Fool: no regular Fools (unless you own Showman)
+    in_pool = function(self, args) return not pool_blocked('c_fool') end,
+    can_use = function(self, card)
+        local last = resolve_last()
+        return (#G.consumeables.cards < G.consumeables.config.card_limit or card.area == G.consumeables)
+            and last ~= nil and last ~= 'c_fool'
+    end,
+    use = function(self, card, area, copier)
+        local last = resolve_last()
+        if not last or last == 'c_fool' then return end
+        G.E_MANAGER:add_event(Event({
+            trigger = 'after', delay = 0.4,
+            func = function()
+                if G.consumeables.config.card_limit > #G.consumeables.cards then
+                    play_sound('timpani')
+                    SMODS.add_card({ key = last, area = G.consumeables, key_append = 'fool' })
+                    card:juice_up(0.3, 0.5)
+                end
+                return true
+            end,
+        }))
+        delay(0.6)
+    end,
+}, true)
 
 --#endregion
 
@@ -589,17 +722,43 @@ local function try_empower(card, seed)
     if not tycoon_active() then return end
     if not (card and card.ability and card.ability.set == 'Tarot') then return end
     if not EMPOWERED_OF[card.config.center.key] then return end
+    if pool_blocked(card.config.center.key) then return end
     if pseudorandom(seed) >= EMPOWER_CHANCE then return end
 
     -- the plain Tarot appears first; a moment later it turns into its Empowered twin
     after(0.8 + math.random() * 0.5, function()
-        if card.removed then return end
+        if card.removed or card.reba_no_empower then return end
         local ekey = EMPOWERED_OF[card.config.center.key]   -- re-read: another effect may have changed the card
         if not ekey or not G.P_CENTERS[ekey] then return end
+        if pool_blocked(card.config.center.key) then return end   -- you picked one up during the delay
+
+        local in_shop = (card.area == G.shop_jokers)
+
         card.reba_prog = 0
         card:set_ability(G.P_CENTERS[ekey], true)
+        card.config.center_key = ekey   -- the save file stores this key, otherwise it reloads as the plain Tarot
         card:set_cost()
+
+        -- the swap can drop the shop price tag / buy buttons, so rebuild them
+        if in_shop and create_shop_card_ui then
+            for _, k in ipairs({ 'price', 'buy_button', 'buy_and_use_button' }) do
+                local ui = card.children[k]
+                if ui then
+                    pcall(function() ui:remove() end)
+                    card.children[k] = nil
+                end
+            end
+            create_shop_card_ui(card, card.ability.set, card.area)
+        end
+
+        local ks = {}
+        for k in pairs(card.children) do ks[#ks + 1] = k end
+        sendDebugMessage('[reba] empowered swap -> ' .. ekey .. ' | in_shop=' .. tostring(in_shop) .. ' | children: ' .. table.concat(ks, ','))
+
         empower_fx(card)
+
+        -- vanilla autosaves when the shop opens, i.e. BEFORE this swap, so save again
+        after(1.2, function() if save_run then pcall(save_run) end end)
     end)
 end
 
@@ -619,17 +778,44 @@ function SMODS.create_card(t)
     return card
 end
 
+--#endregion
+
+--#region Idle shake: Empowered cards give a small "surge" every few seconds
+
 local card_update_ref = Card.update
 function Card:update(dt)
     card_update_ref(self, dt)
     if self.config and self.config.center and self.config.center.reba_empowered
-        and self.states and self.states.visible then
-        self.reba_pulse = (self.reba_pulse or (2 + math.random() * 3)) - dt
+        and self.states and self.states.visible and (self.dissolve or 0) < 0.01 then
+        self.reba_pulse = (self.reba_pulse or (3 + math.random() * 4)) - dt
         if self.reba_pulse <= 0 then
-            self.reba_pulse = 3 + math.random() * 3
-            self:juice_up(0.06, 0.04)
+            self.reba_pulse = 6 + math.random() * 4
+            self:juice_up(0.12, 0.08)   -- raise for a stronger shake, lower for a subtler one
         end
     end
 end
+
+--#endregion
+
+--#region API for main.lua (Charm Tag)
+
+REBA_TAROT_TYCOON = {
+    -- plain Tarot key -> maybe its Empowered key (only while Tarot Tycoon is owned)
+    maybe_empower = function(key, seed)
+        local ekey = EMPOWERED_OF[key]
+        if ekey and tycoon_active() and pseudorandom(seed) < EMPOWER_CHANCE then return ekey end
+        return key
+    end,
+    is_empowered_key = function(key) return BASE_OF[key] ~= nil end,
+    -- turn an existing card into an Empowered Tarot, with the reveal
+    become = function(card, ekey)
+        card.reba_no_empower = true
+        card.reba_prog = 0
+        card:set_ability(G.P_CENTERS[ekey], true)
+        card.config.center_key = ekey
+        card:set_cost()
+        empower_fx(card)
+    end,
+}
 
 --#endregion

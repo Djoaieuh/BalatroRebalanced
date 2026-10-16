@@ -19,7 +19,6 @@ SMODS.Atlas{ key = 'flower_pot_diamond', path = 'Flower_Pot_Diamond.png', px = 7
 
 if JokerDisplay then
     SMODS.load_file("joker_display_overrides.lua")()
-    assert(SMODS.load_file("tarotTycoon.lua"))()
 end
 
 --#endregion
@@ -37,7 +36,7 @@ end
 assert(SMODS.load_file('highlight_changed.lua'))()
 
 assert(SMODS.load_file("shop_skip.lua"))()
-
+assert(SMODS.load_file("tarotTycoon.lua"))()
 --#endregion
 
 --#region Hand Levels
@@ -152,6 +151,14 @@ SMODS.Consumable:take_ownership('ouija', {
 }, true)
 
 SMODS.current_mod.calculate = function(self, context)
+
+    if context.remove_playing_cards then
+        local broken = 0
+        for _, c in ipairs(context.removed or {}) do
+            if c.shattered then broken = broken + 1 end
+        end
+        if broken > 0 then G.GAME.reba_glass_broken = (G.GAME.reba_glass_broken or 0) + broken end
+    end
 
     if context.starting_shop then
         G.GAME.planet_tycoon_active = true
@@ -1559,6 +1566,21 @@ SMODS.Joker:take_ownership('splash', {
     end,
 }, true)
 
+-- GLASS JOKER: X0.75 Mult for every Glass Card broken this run, including before you got it
+SMODS.Joker:take_ownership('glass', {
+    config = { extra = 0.75, x_mult = 1 },
+    loc_vars = function(self, info_queue, card)
+        local broken = (G.GAME and G.GAME.reba_glass_broken) or 0
+        return { vars = { card.ability.extra, 1 + card.ability.extra * broken } }
+    end,
+    calculate = function(self, card, context)
+        if context.joker_main then
+            local x = 1 + card.ability.extra * ((G.GAME and G.GAME.reba_glass_broken) or 0)
+            if x > 1 then return { xmult = x } end
+        end
+    end,
+}, true)
+
 --#endregion
 
 --#region Reroll Changes
@@ -1566,10 +1588,21 @@ SMODS.Joker:take_ownership('splash', {
 local old_calculate_reroll_cost = calculate_reroll_cost
 
 function calculate_reroll_cost(skip_increment)
+    -- a reroll that was paid for by the D6 Tag must not raise the price of later ones
+    if G.GAME.reba_d6_used then
+        G.GAME.reba_d6_used = nil
+        skip_increment = true
+    end
+
+    -- D6 Tag rerolls are free (Chaos the Clown's free rerolls get used first)
+    if (G.GAME.reba_d6_free or 0) > 0 and (G.GAME.current_round.free_rerolls or 0) <= 0 then
+        G.GAME.current_round.reroll_cost = 0
+        return
+    end
+
     old_calculate_reroll_cost(skip_increment)
 
     -- Free rerolls already set the cost to 0, so no extra logic is needed
-    -- (this is what makes the D6 Tag's 3 free rerolls work, see the lovely patch)
     if G.GAME.current_round.free_rerolls > 0 then
         return
     end
@@ -1592,18 +1625,26 @@ function calculate_reroll_cost(skip_increment)
             G.GAME.current_round.reroll_cost + extra_increase
     end
 
-        if G.GAME.planet_tycoon_active then
+    if G.GAME.planet_tycoon_active then
         local discount = G.GAME.planet_tycoon_discount or 0
 
         if discount > 0 then
-            -- Cap the stored discount at the current cost, so any overflow
-            -- past $0 is thrown away instead of carrying into later rerolls
             discount = math.min(discount, G.GAME.current_round.reroll_cost)
             G.GAME.planet_tycoon_discount = discount
 
             G.GAME.current_round.reroll_cost = G.GAME.current_round.reroll_cost - discount
         end
     end
+end
+
+-- Spend one D6 free reroll whenever a reroll is made with one
+local reroll_shop_ref = G.FUNCS.reroll_shop
+G.FUNCS.reroll_shop = function(e)
+    if (G.GAME.current_round.free_rerolls or 0) <= 0 and (G.GAME.reba_d6_free or 0) > 0 then
+        G.GAME.reba_d6_free = G.GAME.reba_d6_free - 1
+        G.GAME.reba_d6_used = true
+    end
+    return reroll_shop_ref(e)
 end
 
 -- Clears the shop rule when leaving the shop
@@ -1891,8 +1932,15 @@ function Card:open()
                 if #G.pack_cards.cards < pack.ability.extra then return false end  -- pack not full yet
 
                 local last = G.pack_cards.cards[#G.pack_cards.cards]
+                last.reba_no_empower = true   -- the announced bonus card is never re-rolled by Tarot Tycoon
+
                 if spec.kind == 'center' and G.P_CENTERS[spec.key] then
-                    last:set_ability(G.P_CENTERS[spec.key], true)
+                    if REBA_TAROT_TYCOON and REBA_TAROT_TYCOON.is_empowered_key(spec.key) then
+                        REBA_TAROT_TYCOON.become(last, spec.key)   -- Empowered card: plays the reveal
+                    else
+                        last:set_ability(G.P_CENTERS[spec.key], true)
+                        last.config.center_key = spec.key          -- so it survives save/reload
+                    end
                 elseif spec.kind == 'seal' then
                     if last.seal ~= spec.key then last:set_seal(spec.key, true) end
                 end
@@ -2311,7 +2359,6 @@ SMODS.Tag:take_ownership('tag_top_up', {
 SMODS.Tag:take_ownership('tag_orbital', {}, true)
 G.P_TAGS['tag_orbital'].config.levels = 5
 
--- Tag:set_ability hook: Orbital fallback + pre-rolled bonus cards for Charm / Buffoon / Standard
 local set_ability_tag_ref = Tag.set_ability
 function Tag:set_ability()
     if self.name == 'Orbital Tag' and G.GAME and G.GAME.round_resets then
@@ -2330,8 +2377,8 @@ function Tag:set_ability()
         self.ability.orbital_hand = pseudorandom_element(hands, pseudoseed('orbital_fallback'))
     end
 
-     -- Charm Tag: roll the extra Tarot up front so the tag can show it
-    -- (Empowered Tarots are skipped, they only come from Tarot Tycoon)
+    -- Charm Tag: roll the extra Tarot up front so the tag can show it.
+    -- Plain pool only; with Tarot Tycoon owned it may then be turned into its Empowered version.
     if self.name == 'Charm Tag' and not self.ability.charm_card then
         local pool = {}
         for _, center in ipairs(G.P_CENTER_POOLS.Tarot) do
@@ -2340,6 +2387,9 @@ function Tag:set_ability()
             end
         end
         self.ability.charm_card = pseudorandom_element(pool, pseudoseed('charm_tag_card'))
+        if REBA_TAROT_TYCOON then
+            self.ability.charm_card = REBA_TAROT_TYCOON.maybe_empower(self.ability.charm_card, 'charm_tag_empower')
+        end
     end
 
     -- Buffoon Tag: roll the extra Uncommon/Rare Joker up front
@@ -2400,6 +2450,23 @@ SMODS.Tag:take_ownership('tag_skip', {
         local bonus = (tag and tag.config or self.config).skip_bonus
         local skips = (G.GAME and G.GAME.skips) or 0
         return { vars = { bonus, (skips + 1) * bonus } }
+    end,
+}, true)
+
+--------------------------------------------------------------------------------
+-- D6 Tag: your NEXT 3 rerolls cost $0. Stored in a run-wide counter, so tags stack
+-- (Double Tag) and unused free rerolls carry over to later shops.
+--------------------------------------------------------------------------------
+SMODS.Tag:take_ownership('tag_d_six', {
+    apply = function(self, tag, context)
+        if context.type ~= 'shop_start' then return end
+        tag:yep('+', G.C.GREEN, function()
+            G.GAME.reba_d6_free = (G.GAME.reba_d6_free or 0) + 3
+            calculate_reroll_cost(true)
+            return true
+        end)
+        tag.triggered = true
+        return true
     end,
 }, true)
 

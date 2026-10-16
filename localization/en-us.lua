@@ -212,6 +212,16 @@ return {
                     "{C:inactive}(Currently {C:red}+#2#{C:inactive} Mult)",
                 },
             },
+
+            j_glass = {
+                name = "Glass Joker",
+                text = {
+                    "{X:mult,C:white}X#1#{} Mult for every",
+                    "{C:attention}Glass Card{} that was",
+                    "destroyed this run",
+                    "{C:inactive}(Currently {X:mult,C:white}X#2#{C:inactive} Mult)",
+                },
+            },
         },
 
         Stake = {
@@ -284,6 +294,15 @@ return {
                     '{C:planet}Planet{} cards now upgrade',
                     'your {C:attention}poker hands{} by',
                     'an {C:attention}extra level{}'
+                },
+            },
+
+            v_tarot_tycoon = {
+                name = 'Tarot Tycoon',
+                text = {
+                    '{C:tarot}Tarot{} cards from the shop and',
+                    '{C:attention}Arcana Packs{} have a chance',
+                    'to be {C:purple}Empowered{}',
                 },
             },
 
@@ -376,8 +395,8 @@ return {
             tag_d_six = {
                 name = "D6 Tag",
                 text = {
-                    "Your first {C:attention}3{} rerolls in the",
-                    "next {C:attention}shop{} cost {C:money}$0{}",
+                    "Your next {C:attention}3{} rerolls",
+                    "cost {C:money}$0{}",
                 },
             },
             tag_charm = {
